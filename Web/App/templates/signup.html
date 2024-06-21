@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>註冊</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            background-color: #725ad1;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #5c48b2;
+        }
+        .error {
+            color: red;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>註冊</h1>
+        <form id="sugnup-form" action="/signup" method="POST">
+            <label for="username">使用者名稱:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="account">帳號:</label>
+            <input type="text" id="account" name="account" required>
+
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="confirm_password">確認密碼:</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+            <span id="message"></span>
+
+            <input type="submit" value="註冊">
+            {% if error %}
+                <p class="error-message">{{ error }}</p>
+            {% endif %}
+        </form>
+        <a href="/login" >login</a>
+    </div>
+
+    <script>
+        document.getElementById('password').addEventListener('keyup', function() {
+            const password = document.getElementById('password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+            const message = document.getElementById('message');
+            
+            // if (password === confirm_password) {
+            //     message.innerHTML = '';
+            // } else {
+            //     message.innerHTML = '密碼不一致';
+            // }
+        });
+    </script>
+</body>
+</html>
