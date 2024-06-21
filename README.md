@@ -13,7 +13,7 @@ dbConn = myconn.connect(
     database = 'server'   #請在資料庫創建一個server的資料庫
 )
 
-# 玩 authentication 流程
+# authentication資料夾 流程
 先用check.py找檢查碼，生成編號
 再用key_main.py輸入編號，生成公私鑰
 接下來就可以使用asym_main.py進行身分驗證或是session_key.py產生會議金鑰
