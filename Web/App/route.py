@@ -1,24 +1,16 @@
 from flask import render_template
 from flask import Flask,render_template,request,flash,redirect,url_for
 import mysql.connector as myconn
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import random
 import bcrypt
-from datetime import timedelta
-
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
 
 
-def index():
-    return render_template('index.html') 
-def dashboard():
-    return render_template('dashboard.html') 
-
 app.secret_key = os.urandom(20)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # 设置会话超时时间为30分钟
 login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.session_protection = "strong"
