@@ -5,6 +5,8 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import os
 import random
 import bcrypt
+from datetime import timedelta
+from flask_wtf.csrf import CSRFProtect
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
@@ -16,7 +18,7 @@ def dashboard():
     return render_template('dashboard.html') 
 
 app.secret_key = os.urandom(20)
-
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # 设置会话超时时间为30分钟
 login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.session_protection = "strong"
@@ -93,7 +95,7 @@ def login():
         flash(f'{student}！歡迎加入！')
         id = student
         iot_data = get_iot_data()
-        return render_template("homepage.html", iot_data=iot_data)
+        return redirect(url_for('homepage'))
 
     error = '帳號或密碼錯誤'
     return render_template('login.html', error=error)
