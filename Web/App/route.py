@@ -6,7 +6,7 @@ import os
 import random
 import bcrypt
 from datetime import timedelta
-from flask_wtf.csrf import CSRFProtect
+
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
