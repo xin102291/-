@@ -4,7 +4,6 @@ from binary import *
 
 def asym_key(id, n, q, bound, A_size, B_size, sk_size):
     A = [[0 for _ in range(n)] for _ in range(n)]
-    # A = np.zeros((n,n), dtype=np.int16)
     k=0
 
     for i in range(n):

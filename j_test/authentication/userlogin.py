@@ -53,9 +53,4 @@ while(flag1 == 0 or flag2 == 0 or flag3 == 0):
             password = input("密碼: ")
         else:
             flag3 = 1
-
-        # print(f"SHA-224 Hash: {hash_digest}")
-
-        # a = f"{hash_digest}"
-
 print("Welcome!!")
