@@ -24,13 +24,13 @@
             text-decoration: none;
             display: inline-block;
             margin-top: 20px;
-            float: right; /* 右上角浮動 */
-            margin-right: 20px; /* 右邊距 */
+            float: right;
+            margin-right: 20px;
         }
         .logout-link {
             margin-top: 10px;
-            margin-right: 10px; /* 将链接右对齐 */
-            float: right; /* 将链接浮动到右侧 */
+            margin-right: 10px;
+            float: right;
         }
         .filter {
             margin: 20px auto;
@@ -49,7 +49,7 @@
         #filter-form input[type="date"] {
             padding: 8px;
             font-size: 14px;
-            margin: 0 5px; /* 調整日期輸入框的間距 */
+            margin: 0 5px;
         }
         #data-table {
             width: 80%;
@@ -69,10 +69,10 @@
             margin: 20px auto;
             width: 80%;
             display: flex;
-            justify-content: flex-end; /* 右对齐 */
+            justify-content: flex-end;
             align-items: center;
             margin-top: 10px;
-            margin-bottom: 20px; /* 增加底部间距 */
+            margin-bottom: 20px;
         }
         .pagination-btn {
             background-color: #725ad1;
@@ -81,19 +81,22 @@
             text-decoration: none;
             border: none;
             cursor: pointer;
-            margin-right: 5px; /* 調整按鈕之間的右邊距 */
+            margin-right: 5px;
         }
         #goto-page-select {
             padding: 6px;
             font-size: 14px;
-            margin-right: 5px; /* 调整下拉框和按钮的间距 */
+            margin-right: 5px;
+        }
+        .chart-container {
+            width: 80%;
+            margin: 20px auto;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <a href="/logout" class="logout-link">登出</a>
-    <a href="/dashboard" class="logout-link">dashboard</a>
-    <a href="/health" class="logout-link">health</a>
     <h1>IoT 數據</h1>
 
     <div class="filter">
@@ -114,7 +117,9 @@
         </form>
     </div>
     
-    
+    <div class="chart-container">
+        <canvas id="iot-chart"></canvas>
+    </div>
 
     <table id="data-table">
         <thead>
@@ -145,12 +150,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const data = {{ iot_data | tojson | safe }};
-            const itemsPerPage = 100; // 每頁顯示的條目數
+            const itemsPerPage = 100;
             let currentPage = 1;
             let filteredData = data;
 
             function loadData() {
                 displayData();
+                displayChart();
             }
 
             function displayData() {
@@ -171,15 +177,65 @@
                 scrollToTop();
             }
 
+            function displayChart() {
+                const ctx = document.getElementById('iot-chart').getContext('2d');
+                const labels = filteredData.map(entry => entry.date);
+                const temperatures = filteredData.map(entry => entry.temperature);
+                const humidities = filteredData.map(entry => entry.humidity);
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '溫度',
+                            data: temperatures,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: false,
+                        }, {
+                            label: '濕度',
+                            data: humidities,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            fill: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: '日期'
+                                },
+                                ticks: {
+                                maxTicksLimit: 10 // 控制X軸上的最大標籤數量
+                            }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: '數值'
+                                }
+                                // ,
+                                // min: 0,
+                                // max: 100
+                            }
+                        }
+                    }
+                });
+            }
+
             function updatePagination() {
                 const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-                // 更新顯示總頁數
                 const totalPageElement = document.getElementById('total-pages');
                 totalPageElement.textContent = `共 ${totalPages} 頁`;
 
-                // 更新下拉選擇框的選項
                 const gotoPageSelect = document.getElementById('goto-page-select');
+                gotoPageSelect.inner
                 gotoPageSelect.innerHTML = '';
                 for (let i = 1; i <= totalPages; i++) {
                     const option = document.createElement('option');
@@ -187,34 +243,33 @@
                     option.textContent = i;
                     gotoPageSelect.appendChild(option);
                 }
-                // 設置下拉框當前選中項
                 gotoPageSelect.value = currentPage;
             }
 
             function goToPage(page) {
                 currentPage = page;
                 displayData();
+                displayChart(); // 更新圖表
             }
 
-            // 上一頁按鈕的事件處理
             const prevPageBtn = document.getElementById('prev-page-btn');
             prevPageBtn.addEventListener('click', function() {
                 if (currentPage > 1) {
                     currentPage--;
                     displayData();
+                    displayChart(); // 更新圖表
                 }
             });
 
-            // 下一頁按鈕的事件處理
             const nextPageBtn = document.getElementById('next-page-btn');
             nextPageBtn.addEventListener('click', function() {
                 if (currentPage < Math.ceil(filteredData.length / itemsPerPage)) {
                     currentPage++;
                     displayData();
+                    displayChart(); // 更新圖表
                 }
             });
 
-            // 跳轉到指定頁的功能
             const gotoPageBtn = document.getElementById('goto-page-btn');
             gotoPageBtn.addEventListener('click', function() {
                 const gotoPageSelect = document.getElementById('goto-page-select');
@@ -223,12 +278,34 @@
                 if (pageNumber >= 1 && pageNumber <= Math.ceil(filteredData.length / itemsPerPage)) {
                     currentPage = pageNumber;
                     displayData();
+                    displayChart(); // 更新圖表
                 } else {
                     alert('請輸入有效的頁碼！');
                 }
             });
 
-            // 滾動頁面到頂部
+            const filterForm = document.getElementById('filter-form');
+            filterForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const tempMin = parseFloat(document.getElementById('temp_min').value) || -Infinity;
+                const tempMax = parseFloat(document.getElementById('temp_max').value) || Infinity;
+                const humMin = parseFloat(document.getElementById('hum_min').value) || -Infinity;
+                const humMax = parseFloat(document.getElementById('hum_max').value) || Infinity;
+                const dateStart = document.getElementById('date_start').value;
+                const dateEnd = document.getElementById('date_end').value;
+
+                filteredData = data.filter(entry => {
+                    const tempValid = entry.temperature >= tempMin && entry.temperature <= tempMax;
+                    const humValid = entry.humidity >= humMin && entry.humidity <= humMax;
+                    const dateValid = (!dateStart || entry.date >= dateStart) && (!dateEnd || entry.date <= dateEnd);
+                    return tempValid && humValid && dateValid;
+                });
+
+                currentPage = 1;
+                displayData();
+                displayChart(); // 更新圖表
+            });
+
             function scrollToTop() {
                 window.scrollTo({
                     top: 0,

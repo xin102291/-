@@ -1,10 +1,11 @@
 from flask import render_template
-from flask import Flask,render_template,request,flash,redirect,url_for
+from flask import Flask,render_template,request,flash,redirect,url_for, jsonify
 import mysql.connector as myconn
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import random
 import bcrypt
+import pandas as pd
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
@@ -34,14 +35,18 @@ id=""
 pwd = ""
 
 class User(UserMixin):
-    pass
+    def __init__(self, id):
+        self.id = id
+
+    def get_id(self):
+        return self.id
 
 @login_manager.user_loader
 def user_loader(student):
     if student not in users:
         return
 
-    user = User()
+    user = User(student)
     user.id = student
     return user
 
@@ -52,13 +57,13 @@ def request_loader(request):
     if id not in users:
         return
 
-    user = User()
-    user.id = id
     my_cursor.execute(f"select password from `users` where id='{id}';")
     password = my_cursor.fetchone()
-    user.is_authenticated = bcrypt.checkpw(pwd.encode(),password[0].encode())
-
-    return user
+    if password and bcrypt.checkpw(pwd.encode(),password[0].encode()):
+        user = User(id)
+        user.is_authenticated = bcrypt.checkpw(pwd.encode(),password[0].encode())
+        return user
+    return None
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -81,12 +86,11 @@ def login():
     correct_password = my_cursor.fetchone()
     
     if correct_password and bcrypt.checkpw(password.encode(), correct_password[0].encode()):
-        user = User()
+        user = User(student)
         user.id = student
         login_user(user)
         flash(f'{student}！歡迎加入！')
         id = student
-        iot_data = get_iot_data()
         return redirect(url_for('homepage'))
 
     error = '帳號或密碼錯誤'
@@ -166,6 +170,29 @@ def homepage():
 
     return render_template("homepage.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
 
+@app.route("/dashboard", methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    temp_min = request.args.get('temp_min')
+    temp_max = request.args.get('temp_max')
+    hum_min = request.args.get('hum_min')
+    hum_max = request.args.get('hum_max')
+    iot_data = get_iot_data()
+    if temp_min or temp_max or hum_min or hum_max:
+        filtered_data = []
+        for item in iot_data:
+            if temp_min and float(item['temperature']) < float(temp_min):
+                continue
+            if temp_max and float(item['temperature']) > float(temp_max):
+                continue
+            if hum_min and float(item['humidity']) < float(hum_min):
+                continue
+            if hum_max and float(item['humidity']) > float(hum_max):
+                continue
+            filtered_data.append(item)
+        iot_data = filtered_data
+
+    return render_template("dashboard.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
 
 def get_iot_data():
     # 生成隨機500筆資料
@@ -175,3 +202,18 @@ def get_iot_data():
         humidity = round(random.uniform(40.0, 60.0), 2)
         iot_data.append({'temperature': temperature, 'humidity': humidity, 'date': '2024-06-01'})
     return iot_data
+
+
+
+# 載入健康報告數據
+health_data = pd.read_csv('Web\App\health_report.csv', encoding='utf-8')
+
+@app.route('/health', methods=['GET', 'POST'])
+@login_required
+def health():
+    return render_template("health.html")
+
+@app.route('/api/data')
+def get_data():
+    data = health_data.to_dict(orient='records')
+    return jsonify(data)
