@@ -54,7 +54,3 @@ print("This is your public key and private key.")
 
 print("pk: \n", pk)
 print("sk:\n", sk)
-
-# print("A:\n", pk[0])
-# print("B:\n", pk[1])
-# print("s:\n", sk)
