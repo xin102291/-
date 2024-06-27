@@ -91,7 +91,7 @@ def login():
         login_user(user)
         flash(f'{student}！歡迎加入！')
         id = student
-        return redirect(url_for('homepage'))
+        return redirect(url_for('datepage'))
 
     error = '帳號或密碼錯誤'
     return render_template('login.html', error=error)
@@ -145,9 +145,9 @@ def signup():
             flash(f'註冊失敗：{err}', 'error')
             return render_template('signup.html',error = "註冊失敗")
 
-@app.route("/homepage", methods=['GET', 'POST'])
+@app.route("/datepage", methods=['GET', 'POST'])
 @login_required
-def homepage():
+def datepage():
     temp_min = request.args.get('temp_min')
     temp_max = request.args.get('temp_max')
     hum_min = request.args.get('hum_min')
@@ -168,7 +168,7 @@ def homepage():
             filtered_data.append(item)
         iot_data = filtered_data
 
-    return render_template("homepage.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
+    return render_template("datepage.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
 
 @app.route("/dashboard", methods=['GET', 'POST'])
 @login_required
@@ -217,3 +217,151 @@ def health():
 def get_data():
     data = health_data.to_dict(orient='records')
     return jsonify(data)
+
+
+
+
+@app.route('/home', methods=['GET', 'POST'])
+@login_required
+def home():
+    return render_template("home.html")
+
+
+# # 獲取所有病人資料
+# @app.route('/api/patients')
+# def get_patients():
+#     my_cursor.execute("SELECT * FROM patients")
+#     patients = my_cursor.fetchall()
+#     return jsonify([{
+#         'id': patient[0],
+#         'name': patient[1],
+#         'age': patient[2],
+#         'gender': patient[3],
+#         'contact': patient[4],
+#         'address': patient[5],
+#         'medical_history': patient[6]
+#     } for patient in patients])
+
+# 獲取特定病人資料
+@app.route('/api/patients')
+def get_patient():
+    my_cursor.execute(f"SELECT * FROM patients WHERE id = '{id}'")
+    patient = my_cursor.fetchone()
+    if patient:
+        return jsonify({
+            'id': patient[0],
+            'name': patient[1],
+            'age': patient[2],
+            'gender': patient[3],
+            'contact': patient[4],
+            'address': patient[5],
+            'medical_history': patient[6]
+        })
+    else:
+        return jsonify({'message': 'Patient not found'}), 404
+
+# 獲取健康總覽
+@app.route('/api/health_overview/<string:patient_id>')
+def get_health_overview(patient_id):
+    my_cursor.execute(f"SELECT * FROM health_overview WHERE patient_id = '{patient_id}'")
+    overview = my_cursor.fetchone()
+    if overview:
+        return jsonify({
+            'id': overview[0],
+            'patient_id': overview[1],
+            'overview': overview[2]
+        })
+    else:
+        return jsonify({'message': 'Health overview not found'}), 404
+
+# 獲取病歷記錄
+@app.route('/api/medical_records/<string:patient_id>')
+def get_medical_records(patient_id):
+    my_cursor.execute(f"SELECT * FROM medical_records WHERE patient_id = '{patient_id}'")
+    records = my_cursor.fetchall()
+    return jsonify([{
+        'id': record[0],
+        'patient_id': record[1],
+        'record_date': record[2].strftime('%Y-%m-%d'),
+        'record': record[3]
+    } for record in records])
+
+# 獲取藥物信息
+@app.route('/api/medications/<string:patient_id>')
+def get_medications(patient_id):
+    my_cursor.execute(f"SELECT * FROM medications WHERE patient_id = '{patient_id}'")
+    medications = my_cursor.fetchall()
+    return jsonify([{
+        'id': medication[0],
+        'patient_id': medication[1],
+        'medication_name': medication[2],
+        'dosage': medication[3],
+        'start_date': medication[4].strftime('%Y-%m-%d'),
+        'end_date': medication[5].strftime('%Y-%m-%d') if medication[5] else None
+    } for medication in medications])
+
+# 獲取檢查和檢驗結果
+@app.route('/api/tests_and_results/<string:patient_id>')
+def get_tests_and_results(patient_id):
+    my_cursor.execute(f"SELECT * FROM tests_and_results WHERE patient_id = '{patient_id}'")
+    tests = my_cursor.fetchall()
+    return jsonify([{
+        'id': test[0],
+        'patient_id': test[1],
+        'test_date': test[2].strftime('%Y-%m-%d'),
+        'test_type': test[3],
+        'results': test[4]
+    } for test in tests])
+
+# 獲取預約管理
+@app.route('/api/appointments/<string:patient_id>')
+def get_appointments(patient_id):
+    my_cursor.execute(f"SELECT * FROM appointments WHERE patient_id = '{patient_id}'")
+    appointments = my_cursor.fetchall()
+    return jsonify([{
+        'id': appointment[0],
+        'patient_id': appointment[1],
+        'appointment_date': appointment[2].strftime('%Y-%m-%d'),
+        'appointment_time': appointment[3].strftime('%H:%M:%S'),
+        'doctor': appointment[4],
+        'clinic': appointment[5]
+    } for appointment in appointments])
+
+# 獲取健康提醒
+@app.route('/api/health_reminders/<string:patient_id>')
+def get_health_reminders(patient_id):
+    my_cursor.execute(f"SELECT * FROM health_reminders WHERE patient_id = '{patient_id}'")
+    reminders = my_cursor.fetchall()
+    return jsonify([{
+        'id': reminder[0],
+        'patient_id': reminder[1],
+        'reminder': reminder[2],
+        'reminder_date': reminder[3].strftime('%Y-%m-%d')
+    } for reminder in reminders])
+
+# 獲取醫療文件
+@app.route('/api/medical_documents/<string:patient_id>')
+def get_medical_documents(patient_id):
+    my_cursor.execute(f"SELECT * FROM medical_documents WHERE patient_id = '{patient_id}'")
+    documents = my_cursor.fetchall()
+    return jsonify([{
+        'id': document[0],
+        'patient_id': document[1],
+        'document_name': document[2],
+        'document_path': document[3],
+        'upload_date': document[4].strftime('%Y-%m-%d')
+    } for document in documents])
+
+# 獲取健康教育資源
+@app.route('/api/health_education_resources')
+def get_health_education_resources():
+    my_cursor.execute("SELECT * FROM health_education_resources")
+    resources = my_cursor.fetchall()
+    return jsonify([{
+        'id': resource[0],
+        'resource_name': resource[1],
+        'resource_link': resource[2],
+        'description': resource[3]
+    } for resource in resources])
+
+
