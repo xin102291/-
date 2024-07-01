@@ -2,7 +2,7 @@
 CREATE TABLE users (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    password VARCHAR(800) NOT NULL
+    password VARCHAR(1000) NOT NULL
 );
 
 # 使用網站時請記得創建pqc使用者與server資料庫

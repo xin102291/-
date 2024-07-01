@@ -1,0 +1,88 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    color: #333;
+}
+
+header {
+    background-color: #4682b4;
+    padding: 10px 0;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #f0f8ff;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+}
+
+#logout {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+#logout:hover {
+    color: #f0f8ff;
+}
+
+main {
+    padding: 20px;
+}
+
+h2 {
+    color: #4682b4;
+    margin-bottom: 10px;
+}
+
+#recent-visits, #health-reminders {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#visit-records, #reminders {
+    margin-top: 10px;
+}
+
+#next-appointment {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+#next-appointment-time {
+    color: #4682b4;
+}

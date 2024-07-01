@@ -93,7 +93,7 @@
 <body>
     <header>
         <nav>
-            <ul>
+            <ul aria-label="主導航">
                 <li><a href="#">個人資料</a></li>
                 <li><a href="#">健康總覽</a></li>
                 <li><a href="#">病歷記錄</a></li>
@@ -105,23 +105,37 @@
                 <li><a href="#">健康教育資源</a></li>
             </ul>
             <div class="user-info">
-                <span id="patient-name">病人名字</span>
-                <a href="#" id="logout">登出</a>
+                <span id="patient-name">{{ name|default('訪客') }}</span>
+                <a href="/logout" id="logout" aria-label="登出系統">登出</a>
             </div>
         </nav>
     </header>
     <main>
-        <section id="recent-visits">
-            <h2>近期就診記錄</h2>
+        <section id="recent-visits" aria-labelledby="visits-heading">
+            <h2 id="visits-heading">預約看診日期</h2>
             <div id="visit-records">
-                <!-- 就診記錄內容 -->
+                {% if appointments %}
+                    {% for appointment in appointments %}
+                        <p>日期: {{ appointment.appointment_date|default('未知') }}, 
+                           時間: {{ appointment.appointment_time|default('未知') }}, 
+                           醫生: {{ appointment.doctor|default('未指定') }}, 
+                           診所: {{ appointment.clinic|default('未指定') }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>目前沒有預約</p>
+                {% endif %}
             </div>
-            <p id="next-appointment">下一次回診時間：<span id="next-appointment-time">無</span></p>
         </section>
-        <section id="health-reminders">
-            <h2>健康提醒</h2>
+        <section id="health-reminders" aria-labelledby="reminders-heading">
+            <h2 id="reminders-heading">健康提醒</h2>
             <div id="reminders">
-                <!-- 健康提醒內容 -->
+                {% if reminders %}
+                    {% for reminder in reminders %}
+                        <p>{{ reminder.reminder|default('無提醒內容') }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>無健康提醒</p>
+                {% endif %}
             </div>
         </section>
     </main>

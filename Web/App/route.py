@@ -6,6 +6,8 @@ import os
 import random
 import bcrypt
 import pandas as pd
+from mysql.connector import Error
+from App.patient_full_info import *
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
@@ -19,20 +21,61 @@ login_manager.login_view = 'login'
 login_manager.login_message = '請先登入'
 
 
-dbConn = myconn.connect(
-    host = 'localhost',
-    user = 'pqc',
-    password = '123456',
-    database = 'server'
-)
+# 全局變量
+users = []
+dbConn = None
+is_first_request = True
 
-my_cursor = dbConn.cursor(buffered=True)
-my_cursor.execute("select id from `users`;")
-users=my_cursor.fetchall()
-users=[i[0] for i in users]
+@app.before_request
+def before_request():
+    global is_first_request, dbConn, users
+    if is_first_request:
+        dbConn = create_connection()
+        if dbConn:
+            print("Database connection established.")
+            update_users()
+            print("Users list initialized.")
+        is_first_request = False
 
-id=""
-pwd = ""
+@app.teardown_appcontext
+def teardown_appcontext(exception=None):
+    global dbConn
+    close_connection(dbConn)
+    print("Database connection closed.")
+
+# 數據庫連接函數
+def create_connection():
+    try:
+        connection = myconn.connect(
+            host='localhost',
+            user='pqc',
+            password='123456',
+            database='server'
+        )
+        return connection
+    except Error as e:
+        print(f"Error connecting to MySQL database: {e}")
+        return None
+
+# 關閉數據庫連接函數
+def close_connection(connection):
+    if connection:
+        connection.close()
+
+# 更新 users 列表的函數
+def update_users():
+    global users, dbConn
+    if dbConn:
+        try:
+            cursor = dbConn.cursor(buffered=True)
+            cursor.execute("SELECT id FROM `users`;")
+            users = [i[0] for i in cursor.fetchall()]
+        finally:
+            cursor.close()
+
+
+
+
 
 class User(UserMixin):
     def __init__(self, id):
@@ -66,9 +109,10 @@ def request_loader(request):
     return None
 
 
+# 修改路由函數，在每次操作時開啟和關閉連接
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    global id,pwd
+    global id, pwd
     if request.method == 'GET':
         return render_template("login.html")
     
@@ -82,18 +126,28 @@ def login():
         error = '請輸入帳號或密碼'
         return render_template('login.html', error=error)
 
-    my_cursor.execute(f"SELECT password FROM `users` WHERE id='{student}';")
-    correct_password = my_cursor.fetchone()
-    
-    if correct_password and bcrypt.checkpw(password.encode(), correct_password[0].encode()):
-        user = User(student)
-        user.id = student
-        login_user(user)
-        flash(f'{student}！歡迎加入！')
-        id = student
-        return redirect(url_for('datepage'))
+    connection = create_connection()
+    if connection:
+        try:
+            cursor = connection.cursor(buffered=True)
+            cursor.execute(f"SELECT password FROM `users` WHERE id='{student}';")
+            correct_password = cursor.fetchone()
+            
+            if correct_password and bcrypt.checkpw(password.encode(), correct_password[0].encode()):
+                user = User(student)
+                user.id = student
+                login_user(user)
+                flash(f'{student}！歡迎加入！')
+                id = student
+                return redirect(url_for('home'))
 
-    error = '帳號或密碼錯誤'
+            error = '帳號或密碼錯誤'
+            return render_template('login.html', error=error)
+        finally:
+            cursor.close()
+            close_connection(connection)
+
+    error = '無法連接到數據庫'
     return render_template('login.html', error=error)
 
 @app.route('/logout')
@@ -105,6 +159,7 @@ def logout():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    global dbConn
     if request.method == 'GET':
         return render_template('signup.html')
     elif request.method == 'POST':
@@ -113,37 +168,35 @@ def signup():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        if not username:
-            return render_template('signup.html',error = "請輸入名稱")
-        if not account:
-            return render_template('signup.html',error = "請輸入帳號")
-        if not password:
-            return render_template('signup.html',error = "請輸入密碼")
+        if not username or not account or not password:
+            return render_template('signup.html', error="請填寫所有欄位")
         if len(password) < 8 or len(password) > 15:
-            return render_template('signup.html',error = "密碼長度8~15")
-        
-        # 檢查密碼是否一致
+            return render_template('signup.html', error="密碼長度8~15")
         if password != confirm_password:
-            return render_template('signup.html',error = "密碼和確認密碼不一致")
+            return render_template('signup.html', error="密碼和確認密碼不一致")
 
-        # 檢查用戶名是否已存在
-        my_cursor.execute(f"SELECT * FROM users WHERE id = '{account}'")
-        if my_cursor.fetchone():
-            return render_template('signup.html',error = "該帳號已被使用")
-        # 將密碼進行雜湊處理
+        if account in users:
+            return render_template('signup.html', error="該帳號已被使用")
+
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         
-        # 將用戶信息插入數據庫
-        try:
-            sql = "INSERT INTO users (name,id, password) VALUES (%s,%s, %s)"
-            val = (username, account,hashed_password)
-            my_cursor.execute(sql, val)
-            dbConn.commit()
-            flash(f'{username}！註冊成功！')
-            return redirect(url_for('login'))
-        except myconn.Error as err:
-            flash(f'註冊失敗：{err}', 'error')
-            return render_template('signup.html',error = "註冊失敗")
+        if dbConn:
+            try:
+                cursor = dbConn.cursor()
+                sql = "INSERT INTO users (name, id, password) VALUES (%s, %s, %s)"
+                val = (username, account, hashed_password)
+                cursor.execute(sql, val)
+                dbConn.commit()
+                update_users()  # 更新 users 列表
+                flash(f'{username}！註冊成功！')
+                return redirect(url_for('login'))
+            except myconn.Error as err:
+                flash(f'註冊失敗：{err}', 'error')
+                return render_template('signup.html', error="註冊失敗")
+            finally:
+                cursor.close()
+
+        return render_template('signup.html', error="無法連接到數據庫")
 
 @app.route("/datepage", methods=['GET', 'POST'])
 @login_required
@@ -224,144 +277,20 @@ def get_data():
 @app.route('/home', methods=['GET', 'POST'])
 @login_required
 def home():
-    return render_template("home.html")
-
-
-# # 獲取所有病人資料
-# @app.route('/api/patients')
-# def get_patients():
-#     my_cursor.execute("SELECT * FROM patients")
-#     patients = my_cursor.fetchall()
-#     return jsonify([{
-#         'id': patient[0],
-#         'name': patient[1],
-#         'age': patient[2],
-#         'gender': patient[3],
-#         'contact': patient[4],
-#         'address': patient[5],
-#         'medical_history': patient[6]
-#     } for patient in patients])
-
-# 獲取特定病人資料
-@app.route('/api/patients')
-def get_patient():
-    my_cursor.execute(f"SELECT * FROM patients WHERE id = '{id}'")
-    patient = my_cursor.fetchone()
-    if patient:
-        return jsonify({
-            'id': patient[0],
-            'name': patient[1],
-            'age': patient[2],
-            'gender': patient[3],
-            'contact': patient[4],
-            'address': patient[5],
-            'medical_history': patient[6]
-        })
+    global id
+    patient_info = get_patient(id)
+    
+    if patient_info:
+        patient_name = patient_info[0]['name']
+        # 獲取健康提醒
+        reminders = get_health_reminders(id)
+        # 獲取預約看診日期
+        appointments = get_appointments(id)
+        return render_template("home.html", 
+                               name=patient_name, 
+                               reminders=reminders,
+                               appointments=appointments)
     else:
-        return jsonify({'message': 'Patient not found'}), 404
-
-# 獲取健康總覽
-@app.route('/api/health_overview/<string:patient_id>')
-def get_health_overview(patient_id):
-    my_cursor.execute(f"SELECT * FROM health_overview WHERE patient_id = '{patient_id}'")
-    overview = my_cursor.fetchone()
-    if overview:
-        return jsonify({
-            'id': overview[0],
-            'patient_id': overview[1],
-            'overview': overview[2]
-        })
-    else:
-        return jsonify({'message': 'Health overview not found'}), 404
-
-# 獲取病歷記錄
-@app.route('/api/medical_records/<string:patient_id>')
-def get_medical_records(patient_id):
-    my_cursor.execute(f"SELECT * FROM medical_records WHERE patient_id = '{patient_id}'")
-    records = my_cursor.fetchall()
-    return jsonify([{
-        'id': record[0],
-        'patient_id': record[1],
-        'record_date': record[2].strftime('%Y-%m-%d'),
-        'record': record[3]
-    } for record in records])
-
-# 獲取藥物信息
-@app.route('/api/medications/<string:patient_id>')
-def get_medications(patient_id):
-    my_cursor.execute(f"SELECT * FROM medications WHERE patient_id = '{patient_id}'")
-    medications = my_cursor.fetchall()
-    return jsonify([{
-        'id': medication[0],
-        'patient_id': medication[1],
-        'medication_name': medication[2],
-        'dosage': medication[3],
-        'start_date': medication[4].strftime('%Y-%m-%d'),
-        'end_date': medication[5].strftime('%Y-%m-%d') if medication[5] else None
-    } for medication in medications])
-
-# 獲取檢查和檢驗結果
-@app.route('/api/tests_and_results/<string:patient_id>')
-def get_tests_and_results(patient_id):
-    my_cursor.execute(f"SELECT * FROM tests_and_results WHERE patient_id = '{patient_id}'")
-    tests = my_cursor.fetchall()
-    return jsonify([{
-        'id': test[0],
-        'patient_id': test[1],
-        'test_date': test[2].strftime('%Y-%m-%d'),
-        'test_type': test[3],
-        'results': test[4]
-    } for test in tests])
-
-# 獲取預約管理
-@app.route('/api/appointments/<string:patient_id>')
-def get_appointments(patient_id):
-    my_cursor.execute(f"SELECT * FROM appointments WHERE patient_id = '{patient_id}'")
-    appointments = my_cursor.fetchall()
-    return jsonify([{
-        'id': appointment[0],
-        'patient_id': appointment[1],
-        'appointment_date': appointment[2].strftime('%Y-%m-%d'),
-        'appointment_time': appointment[3].strftime('%H:%M:%S'),
-        'doctor': appointment[4],
-        'clinic': appointment[5]
-    } for appointment in appointments])
-
-# 獲取健康提醒
-@app.route('/api/health_reminders/<string:patient_id>')
-def get_health_reminders(patient_id):
-    my_cursor.execute(f"SELECT * FROM health_reminders WHERE patient_id = '{patient_id}'")
-    reminders = my_cursor.fetchall()
-    return jsonify([{
-        'id': reminder[0],
-        'patient_id': reminder[1],
-        'reminder': reminder[2],
-        'reminder_date': reminder[3].strftime('%Y-%m-%d')
-    } for reminder in reminders])
-
-# 獲取醫療文件
-@app.route('/api/medical_documents/<string:patient_id>')
-def get_medical_documents(patient_id):
-    my_cursor.execute(f"SELECT * FROM medical_documents WHERE patient_id = '{patient_id}'")
-    documents = my_cursor.fetchall()
-    return jsonify([{
-        'id': document[0],
-        'patient_id': document[1],
-        'document_name': document[2],
-        'document_path': document[3],
-        'upload_date': document[4].strftime('%Y-%m-%d')
-    } for document in documents])
-
-# 獲取健康教育資源
-@app.route('/api/health_education_resources')
-def get_health_education_resources():
-    my_cursor.execute("SELECT * FROM health_education_resources")
-    resources = my_cursor.fetchall()
-    return jsonify([{
-        'id': resource[0],
-        'resource_name': resource[1],
-        'resource_link': resource[2],
-        'description': resource[3]
-    } for resource in resources])
-
+        # 處理患者信息不存在的情況
+        return render_template("error.html", message="患者信息未找到")
 
