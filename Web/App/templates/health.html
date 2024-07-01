@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>健康報告趨勢圖</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>健康報告趨勢圖</h1>
+    <canvas id="health-chart"></canvas>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    const years = data.map(entry => entry['年份']);
+                    const bloodPressure = data.map(entry => entry['血壓(mmHg)']);
+                    const heartRate = data.map(entry => entry['心率(bpm)']);
+                    const bloodGlucose = data.map(entry => entry['血糖(mmol/L)']);
+                    const bmi = data.map(entry => entry['BMI']);
+                    const liverFunction = data.map(entry => entry['肝功能(ALT, U/L)']);
+                    const hemoglobin = data.map(entry => entry['血紅蛋白(g/dL)']);
+                    const plateletCount = data.map(entry => entry['血小板計數(10^9/L)']);
+
+                    const ctx = document.getElementById('health-chart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: years,
+                            datasets: [{
+                                label: '血壓(mmHg)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                data: bloodPressure,
+                                fill: false
+                            }, {
+                                label: '心率(bpm)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                data: heartRate,
+                                fill: false
+                            }, {
+                                label: '血糖(mmol/L)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                                data: bloodGlucose,
+                                fill: false
+                            }, {
+                                label: 'BMI',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                data: bmi,
+                                fill: false
+                            }, {
+                                label: '肝功能(ALT, U/L)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                data: liverFunction,
+                                fill: false
+                            }, {
+                                label: '血紅蛋白(g/dL)',
+                                borderColor: 'rgba(255, 159, 64, 1)',
+                                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                data: hemoglobin,
+                                fill: false
+                            }, {
+                                label: '血小板計數(10^9/L)',
+                                borderColor: 'rgba(0, 0, 0, 1)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                                data: plateletCount,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: '年份'
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: '數值'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+</body>
+</html>
