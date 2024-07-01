@@ -32,6 +32,7 @@ class LEWSymmetric:
         digit = 5
         text_A = ctx[0 : digit * n * n]
         text_c = ctx[digit * n * n : len(ctx)]
+        # print("text_c\n",text_c)
         A = [[0 for _ in range(n)] for _ in range(n) ]
         c = [0 for _ in range(n)]
 

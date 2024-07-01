@@ -14,7 +14,7 @@ scale = 10000
 bound = 5
 A_size = 8
 B_size = 32
-sk_size = 8
+sk_size = 12
 
 id = input("Enter the ID (10 letters): ")
 flag1 = 0 # if the ID is 10 letter
@@ -47,10 +47,24 @@ while(flag1 == 0 or flag2 == 0):
         else:
             flag2 = 1
 
+pw = input("pw: ")
+
 # Generate the keys to the ID
 print("This is your public key and private key.")
 
-(pk, sk) = asym_key(id, n, q, bound, A_size, B_size, sk_size)
+(pk, sk) = asym_key(id, pw, n, q, bound, A_size, B_size, sk_size)
+# (pk, sk) = asym_key(id, n, q, bound)
 
 print("pk: \n", pk)
 print("sk:\n", sk)
+
+# print("A:\n", pk[0])
+# print("B:\n", pk[1])
+# print("s:\n", sk)
+
+# path = 'my_custom_key.key'
+# f = open(path, 'w')
+
+# f.write(sk)
+
+# f.close
