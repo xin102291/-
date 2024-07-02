@@ -8,7 +8,7 @@ scale = 10000
 bound = 5
 A_size = 8
 B_size = 32
-sk_size = 8
+sk_size = 12
 
 E = authentication(n, q, bound, scale, A_size, B_size, sk_size)
 

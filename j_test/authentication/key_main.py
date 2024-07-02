@@ -17,54 +17,51 @@ B_size = 32
 sk_size = 12
 
 id = input("Enter the ID (10 letters): ")
+pw = input("Enter the password (8~15 letters): ")
 flag1 = 0 # if the ID is 10 letter
 flag2 = 0 # if the check code is true
+flag3 = 0 # if the password's length between 8-15
 
-# Check if the format of ID is correct
-while(flag1 == 0 or flag2 == 0):
-    if(len(id) == 10):
+# Check if the format of ID and password is correct
+while 1:
+    if len(id) == 10:
         flag1 = 1
     else:
         flag1 = 0
-        print("Wrong format.")
-        id = input("Enter the ID (10 letters): ")
 
-    if(flag1 == 1):
+    if flag1 == 1:
         check = 0
         for i in range(9):
             check += ord(id[i]) * (10-i)
         check %= 11
         check = 11 - check
-        if(check == 10):
+        if check == 10:
             check = ord('X')
         else:
             check += ord('0')
 
-        if(check != ord(id[9])):
+        if check != ord(id[9]):
             flag2 = 0
-            print("Wrong format.")
-            id = input("Enter the ID (10 letters): ")
+            # print("Wrong format.")
+            # id = input("Enter the ID (10 letters): ")
         else:
             flag2 = 1
-
-pw = input("pw: ")
+    if flag1 == 1 and flag2 == 1:
+        if len(pw) < 8 or len(pw)>15:
+            flag3 = 0
+            # print("Wrong format.")
+        else:
+            flag3 = 1
+    if flag1 == 1 and flag2 == 1 and flag3 == 1:
+        break
+    else:
+        print("The ID or password format is incorrect")
+        id = input("Enter the ID (10 letters): ")
+        pw = input("Enter the password (8~15 letters): ")
 
 # Generate the keys to the ID
 print("This is your public key and private key.")
-
 (pk, sk) = asym_key(id, pw, n, q, bound, A_size, B_size, sk_size)
-# (pk, sk) = asym_key(id, n, q, bound)
 
 print("pk: \n", pk)
 print("sk:\n", sk)
-
-# print("A:\n", pk[0])
-# print("B:\n", pk[1])
-# print("s:\n", sk)
-
-# path = 'my_custom_key.key'
-# f = open(path, 'w')
-
-# f.write(sk)
-
-# f.close
