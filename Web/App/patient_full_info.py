@@ -57,31 +57,21 @@ def get_health_reminders(patient_id):
         else:
             return None
 
-# 獲取健康總覽
-def get_health_overview(patient_id):
-    with get_cursor() as cursor:
-        cursor.execute("SELECT * FROM health_overview WHERE patient_id = %s", (patient_id,))
-        overview = cursor.fetchone()
-        if overview:
-            return {
-                'id': overview[0],
-                'patient_id': overview[1],
-                'overview': overview[2]
-            }
-        else:
-            return None
-
-# 獲取病歷記錄
+# 獲取病歷紀錄
 def get_medical_records(patient_id):
     with get_cursor() as cursor:
         cursor.execute("SELECT * FROM medical_records WHERE patient_id = %s", (patient_id,))
-        records = cursor.fetchall()
+        medical_records = cursor.fetchall()
         return [{
             'id': record[0],
             'patient_id': record[1],
             'record_date': record[2].strftime('%Y-%m-%d'),
-            'record': record[3]
-        } for record in records] if records else None
+            'record': record[3],
+            'doctor_id': record[4],
+            'doctor_name': record[5],
+            'hospital_id': record[6],
+            'hospital_name': record[7]
+        } for record in medical_records] if medical_records else None
 
 # 獲取藥物信息
 def get_medications(patient_id):
@@ -110,7 +100,7 @@ def get_tests_and_results(patient_id):
             'results': test[4]
         } for test in tests] if tests else None
 
-
+#獲取預約訊息
 def get_appointments(patient_id):
     with get_cursor() as cursor:
         cursor.execute("SELECT * FROM appointments WHERE patient_id = %s", (patient_id,))
@@ -137,24 +127,12 @@ def get_medical_documents(patient_id):
             'upload_date': document[4].strftime('%Y-%m-%d')
         } for document in documents] if documents else None
 
-# 獲取健康教育資源
-def get_health_education_resources():
-    with get_cursor() as cursor:
-        cursor.execute("SELECT * FROM health_education_resources")
-        resources = cursor.fetchall()
-        return [{
-            'id': resource[0],
-            'resource_name': resource[1],
-            'resource_link': resource[2],
-            'description': resource[3]
-        } for resource in resources] if resources else None
 
 # 獲取患者完整資訊
 def get_patient_full_info(patient_id):
     patient_info = get_patient(patient_id)
     if patient_info:
         patient_data = patient_info[0]
-        patient_data['health_overview'] = get_health_overview(patient_id)
         patient_data['medical_records'] = get_medical_records(patient_id)
         patient_data['medications'] = get_medications(patient_id)
         patient_data['tests_and_results'] = get_tests_and_results(patient_id)

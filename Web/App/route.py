@@ -25,6 +25,9 @@ login_manager.login_message = '請先登入'
 users = []
 dbConn = None
 is_first_request = True
+id = ""
+pwd = ""
+user_type = ""
 
 @app.before_request
 def before_request():
@@ -99,9 +102,10 @@ def request_loader(request):
     
     if id not in users:
         return
-
-    my_cursor.execute(f"select password from `users` where id='{id}';")
-    password = my_cursor.fetchone()
+    connection = create_connection()
+    cursor = connection.cursor(buffered=True)
+    cursor.execute(f"select password from `users` where id='{id}';")
+    password = cursor.fetchone()
     if password and bcrypt.checkpw(pwd.encode(),password[0].encode()):
         user = User(id)
         user.is_authenticated = bcrypt.checkpw(pwd.encode(),password[0].encode())
@@ -109,40 +113,58 @@ def request_loader(request):
     return None
 
 
-# 修改路由函數，在每次操作時開啟和關閉連接
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    global id, pwd
+    global id,pwd,user_type 
     if request.method == 'GET':
         return render_template("login.html")
     
-    student = request.form['user_id']
-    password = request.form['password']
-
+    user_type = request.form.get('user_type')
+    user_id = request.form.get('user_id')
+    password = request.form.get('password')
+    id = user_id
     pwd = password
-    id = student
-    
-    if not student or not password:
-        error = '請輸入帳號或密碼'
-        return render_template('login.html', error=error)
+
+    if not user_id or not password:
+        return render_template('login.html', error='請輸入帳號和密碼')
+
 
     connection = create_connection()
     if connection:
         try:
             cursor = connection.cursor(buffered=True)
-            cursor.execute(f"SELECT password FROM `users` WHERE id='{student}';")
-            correct_password = cursor.fetchone()
-            
-            if correct_password and bcrypt.checkpw(password.encode(), correct_password[0].encode()):
-                user = User(student)
-                user.id = student
-                login_user(user)
-                flash(f'{student}！歡迎加入！')
-                id = student
-                return redirect(url_for('home'))
+            # 首先檢查用戶是否存在於 users 表中
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user_data = cursor.fetchone()
 
-            error = '帳號或密碼錯誤'
-            return render_template('login.html', error=error)
+            if not user_data:
+                return render_template('login.html', error='帳號不存在')
+
+            if not bcrypt.checkpw(password.encode(),user_data[2].encode()):
+                return render_template('login.html', error='密碼錯誤')
+
+            # 檢查用戶是否存在於相應的表中（patients 或 doctors）
+            table_name = 'patients' if user_type == 'patients' else 'doctors'
+            cursor.execute(f"SELECT * FROM {table_name} WHERE id = %s", (user_id,))
+            specific_user_data = cursor.fetchone()
+
+            if not specific_user_data:
+                if user_type == "doctors":
+                    return render_template('login.html', error='此帳號不是醫生')
+                else:
+                    return render_template('login.html', error='此帳號不是病患')
+
+            # 登入成功
+            user = User(user_id)
+            user.id = id
+            login_user(user)
+            
+            # 根據用戶類型重定向到不同的首頁
+            if user_type == 'patients':
+                return redirect(url_for('home'))
+            else:
+                return redirect(url_for('doctor_home'))
+
         finally:
             cursor.close()
             close_connection(connection)
@@ -274,7 +296,7 @@ def get_data():
 
 
 
-@app.route('/home', methods=['GET', 'POST'])
+@app.route('/home')
 @login_required
 def home():
     global id
@@ -292,5 +314,51 @@ def home():
                                appointments=appointments)
     else:
         # 處理患者信息不存在的情況
-        return render_template("error.html", message="患者信息未找到")
+        return render_template("home.html", name="患者信息未找到")
+
+@app.route('/patient_personal_info')
+def patient_personal_info():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:
+        patient = patient_info[0]
+        return render_template('patient_personal_info.html', patient=patient)
+    
+@app.route('/patient_test_results')
+def patient_test_results():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:    
+        patient = patient_info[0]
+        tests_results = get_tests_and_results(id)
+        return render_template('patient_test_results.html', patient=patient, tests_results=tests_results)
+    
+
+@app.route('/patient_medical_records')
+def patient_medical_records():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:
+        patient = patient_info[0]['name']
+        records = get_medical_records(id)
+        return render_template('patient_medical_records.html', patient_name=patient, medical_records=records)
+    
+@app.route('/patient_medications')
+def patient_medications():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:
+        patient = patient_info[0]['name']
+        medications = get_medications(id)
+        return render_template('patient_medications.html', patient_name=patient, medications=medications)
+    
+@app.route('/patient_medical_documents')
+@login_required
+def patient_medical_documents():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:
+        patient = patient_info[0]['name']
+        documents = get_medical_documents(id)
+    return render_template('patient_medical_documents.html', patient_name=patient,documents=documents)
 
