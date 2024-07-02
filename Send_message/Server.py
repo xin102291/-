@@ -54,7 +54,7 @@ def message_handle(client,info):
                 # client.sendall("ACK!".encode(encoding="utf8"))
             elif "SEND_DATA" == cmd:
                 data = jd['data']['data']
-                if len(data) == 3 and len(data[0]) == 3:
+                if len(data) == 3 and len(data[0]) == 3: #以長度判斷是否為正常驗證訊息
                     print("接收訊息:",jd['data']['data'])
                     print("驗證簽章")
                     c = data[0:2]

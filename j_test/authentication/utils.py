@@ -4,20 +4,20 @@ import random
 https://github.com/pmuens/proto-lwe/tree/master?tab=readme-ov-file
 '''
 
-# Generate a vector
+# 生成一個 vector (0 ~ q-1)
 def sample_uniform_vector(n, q):
     return [random.randint(0, q - 1) for _ in range(n)]
 
-
+# 生成一個 vector (-B ~ B)
 def sample_bounded_vector(n, B):
     return [random.randint(-B, B) for _ in range(n)]
     # return [random.randint(0, B-1) for _ in range(n)]
 
-# Generate a n*n matrix
+# 生成一個 n*n matrix (0 ~ q-1)
 def sample_uniform_matrix(n, q):
     return [sample_uniform_vector(n, q) for _ in range(n)]
 
-
+# 生成一個 n*n matrix (-B ~ B)
 def sample_bounded_matrix(n, B):
     return [sample_bounded_vector(n, B) for _ in range(n)]
 
@@ -49,7 +49,7 @@ def matrix_matrix_addition(m, v, q):
         for i in range(n)
     ]
 
-# matrix(m) transpose
+# matrix(m) 轉置
 def matrix_transpose(m):
     n = len(m)
     return [[m[j][i] for j in range(n)] for i in range(n)]

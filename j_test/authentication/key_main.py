@@ -18,17 +18,19 @@ sk_size = 12
 
 id = input("Enter the ID (10 letters): ")
 pw = input("Enter the password (8~15 letters): ")
-flag1 = 0 # if the ID is 10 letter
-flag2 = 0 # if the check code is true
-flag3 = 0 # if the password's length between 8-15
 
-# Check if the format of ID and password is correct
+# 檢查 id 跟 pw 有沒有符合格式
+flag1 = 0 # id 是否為 10 碼
+flag2 = 0 # check number 是否正確
+flag3 = 0 # 密碼長度是否介於 8~10
 while 1:
+    # 檢查 id 長度
     if len(id) == 10:
         flag1 = 1
     else:
         flag1 = 0
 
+    # 若 id 長度符合，再檢查 check number
     if flag1 == 1:
         check = 0
         for i in range(9):
@@ -42,16 +44,15 @@ while 1:
 
         if check != ord(id[9]):
             flag2 = 0
-            # print("Wrong format.")
-            # id = input("Enter the ID (10 letters): ")
         else:
             flag2 = 1
+    # 若 id 跟 check number 正確，再檢查 pw
     if flag1 == 1 and flag2 == 1:
         if len(pw) < 8 or len(pw)>15:
             flag3 = 0
-            # print("Wrong format.")
         else:
             flag3 = 1
+    # 若 id, check number, pw 皆正確則跳出，否則跳出錯誤訊息並重新輸入
     if flag1 == 1 and flag2 == 1 and flag3 == 1:
         break
     else:
@@ -59,9 +60,8 @@ while 1:
         id = input("Enter the ID (10 letters): ")
         pw = input("Enter the password (8~15 letters): ")
 
-# Generate the keys to the ID
+# 生成公私鑰
 print("This is your public key and private key.")
 (pk, sk) = asym_key(id, pw, n, q, bound, A_size, B_size, sk_size)
-
 print("pk: \n", pk)
 print("sk:\n", sk)
