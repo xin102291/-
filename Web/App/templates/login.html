@@ -1,87 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Login Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電子健康病例系統 - 登入</title>
     <style>
         body {
-            background-image: url("static/背景03.jpg");
-            background-size: cover;
-            margin: 0;
             font-family: Arial, sans-serif;
-        }
-
-        .container {
-            width: 100%;
-            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
+            background-image: linear-gradient(to bottom right, #3f51b5, #303f9f);
+        }
+        
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        
+        h1 {
+            color: #3f51b5;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        form {
+            display: flex;
             flex-direction: column;
         }
-
-        h1 {
-            color: #fff;
-            font-size: 36px;
-            margin-bottom: 20px;
+        
+        label {
+            margin-bottom: 5px;
+            color: #333;
         }
-
-        form {
-            background: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            text-align: center;
-        }
-
-        input[type="text"], input[type="password"] {
-            width: calc(100% - 20px);
+        
+        input[type="text"], input[type="password"], select {
+            width: 100%;
             padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             box-sizing: border-box;
-            font-size: 16px;
+            font-size: 14px;
         }
-
+        
+        select {
+            background-color: white;
+        }
+        
         button[type="submit"] {
-            background-color: #725ad1;
+            background-color: #3f51b5;
             color: white;
             border: none;
-            padding: 12px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 4px;
             cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
-
+        
         button[type="submit"]:hover {
-            background-color: #5c49a8;
+            background-color: #303f9f;
         }
-
+        
         .error-message {
-            color: red;
+            color: #f44336;
+            text-align: center;
             margin-top: 10px;
+        }
+        
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .signup-link a {
+            color: #3f51b5;
+            text-decoration: none;
+        }
+        
+        .signup-link a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>登入</h1>
+    <div class="login-container">
+        <h1>電子健康病例系統</h1>
         <form method="POST" action="/login">
-            <input type="text" id="user_id" name="user_id" placeholder="Enter Username">
-            <input type="password" id="password" name="password" placeholder="Enter Password">
-            <button type="submit">Login</button>
+            <label for="user_type">身份</label>
+            <select id="user_type" name="user_type">
+                <option value="patients">病患</option>
+                <option value="doctors">醫生</option>
+            </select>
+            
+            <label for="user_id">用戶名</label>
+            <input type="text" id="user_id" name="user_id" required>
+            
+            <label for="password">密碼</label>
+            <input type="password" id="password" name="password" required>
+            
+            <button type="submit">登入</button>
+            
             {% if error %}
                 <p class="error-message">{{ error }}</p>
             {% endif %}
         </form>
-        <a href="/signup">Register Here</a>
+        <div class="signup-link">
+            <a href="/signup">還沒有帳號？立即註冊</a>
+        </div>
     </div>
 </body>
 </html>
