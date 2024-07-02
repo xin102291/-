@@ -1,3 +1,5 @@
+# Hash 計算範例，可以不用理這個檔案
+
 import hashlib
 
 input = input()

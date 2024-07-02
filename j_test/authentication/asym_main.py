@@ -12,39 +12,33 @@ B_size = 32
 sk_size = 12
 
 E = authentication(n, q, bound, scale, A_size, B_size, sk_size)
-# E = authentication(n, q, bound, scale)
 
+# 輸入 pk (binary的形式)，並檢查長度是否正確
 pk = input("pk: ")
 while len(pk) != A_size*9 + B_size*3:
     print("Wrong format")
     pk = input("pk: ")
-A_bin = pk[ : A_size*9]
-A = binary_to_A(A_bin, A_size)
-B_bin = pk[A_size*9 : ]
-B = binary_to_B(B_bin, B_size)
 
-print("A: ", A)
-print("B: ", B)
-
+# 輸入 sk (binary的形式)，並檢查長度是否正確
 sk = input("sk: ")
 while len(sk) != sk_size*3:
     print("Wrong format")
     sk = input("sk: ")
 
-s = binary_to_sk(sk, sk_size)
-
-print("sk: ", s)
-
+# 輸入一個數字，作為驗證訊息
 print("Enter a number(0 ~ 9999): ")
 m = int(input())
 
+# 私鑰產生簽章
 print("\nEncrypt")
 c = E.encrypt(m, pk, sk)
 print("c: ", c)
 
+# 公鑰驗證簽章
 print("\nDecrypt")
 p = E.decrypt(c, pk)
 print("p: ", p)
 
+# 驗證原本生成的訊息與簽章是否一致
 assert m == p
-print("\nm = p", "\nsuccessful!!")
+print("\nm = p", "\nSuccessful!!")

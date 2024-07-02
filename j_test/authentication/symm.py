@@ -2,19 +2,22 @@ from utils import *
 import numpy as np
 
 class LEWSymmetric:
-    def __init__(self, n, q, B, scale):
+    def __init__(self, n, q, bound, scale):
         self.n = n
         self.q = q
-        self.B = B
+        self.bound = bound
         self.scale = scale
 
+    # 加密訊息
     def encrypt(self, s, m):
-        A = sample_uniform_matrix(self.n, self.q)
-        b = matrix_vector_multiplication(A, s, self.q) #As
-        e = sample_bounded_vector(self.n, self.B)
-        b = vector_vector_addition(b, e, self.q)
-        scale_m = [self.q // self.scale * m[i] % self.q for i in range(self.n)]
-        c = vector_vector_addition(b, scale_m, self.q)
+        A = sample_uniform_matrix(self.n, self.q) # 隨機生成一個 matrix 做為 A
+        B = matrix_vector_multiplication(A, s, self.q) # B = As
+        e = sample_bounded_vector(self.n, self.bound) # 隨機生成一個 vector 做為干擾值
+        B = vector_vector_addition(B, e, self.q) # B = As + e
+        scale_m = [self.q // self.scale * m[i] % self.q for i in range(self.n)] # m[i] = m[i] * (q/scale)
+        c = vector_vector_addition(B, scale_m, self.q) # c = B + m
+
+        # 將 A 以及生成訊息轉成字串並接在一起
         text_A = ""
         for i in range(self.n):
             for j in range(self.n):
@@ -25,6 +28,7 @@ class LEWSymmetric:
         text = text_A + text_c
         return(text)
     
+    # 解密訊息
     def decrypt(self, s, ctx):
         j=0
         k=0
