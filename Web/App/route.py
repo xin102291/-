@@ -141,7 +141,7 @@ def login():
                 return render_template('login.html', error='帳號不存在')
 
             if not bcrypt.checkpw(password.encode(),user_data[2].encode()):
-                return render_template('login.html', error='密碼錯誤')
+                return render_template('login.html', error='密碼或帳號錯誤')
 
             # 檢查用戶是否存在於相應的表中（patients 或 doctors）
             table_name = 'patients' if user_type == 'patients' else 'doctors'
@@ -181,38 +181,59 @@ def logout():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    global dbConn
     if request.method == 'GET':
         return render_template('signup.html')
     elif request.method == 'POST':
-        username = request.form['username']
-        account = request.form['account']
+        patient_id = request.form['id']
+        name = request.form['name']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
+        age = request.form['age']
+        gender = request.form['gender']
+        contact = request.form['contact']
+        address = request.form['address']
+        medical_history = request.form['medical_history']
 
-        if not username or not account or not password:
-            return render_template('signup.html', error="請填寫所有欄位")
+        # 基本驗證
+        if not all([patient_id, name, password, age, gender, contact, address, medical_history]):
+            return render_template('signup.html', error="請填寫所有必填欄位")
         if len(password) < 8 or len(password) > 15:
-            return render_template('signup.html', error="密碼長度8~15")
+            return render_template('signup.html', error="密碼長度必須在8到15個字符之間")
         if password != confirm_password:
             return render_template('signup.html', error="密碼和確認密碼不一致")
 
-        if account in users:
-            return render_template('signup.html', error="該帳號已被使用")
-
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        
-        if dbConn:
+        # 檢查ID是否已存在
+        connection = create_connection()
+        if connection:
             try:
+                cursor = connection.cursor(buffered=True)
                 cursor = dbConn.cursor()
-                sql = "INSERT INTO users (name, id, password) VALUES (%s, %s, %s)"
-                val = (username, account, hashed_password)
-                cursor.execute(sql, val)
+                cursor.execute("SELECT id FROM patients WHERE id = %s", (patient_id,))
+                if cursor.fetchone():
+                    cursor.close()
+                    return render_template('signup.html', error="該病患ID已被使用")
+                # 密碼加密
+                hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+                
+                # 插入用戶資料
+                sql_user = "INSERT INTO users (id, name, password) VALUES (%s, %s, %s)"
+                val_user = (patient_id, name, hashed_password)
+                cursor.execute(sql_user, val_user)
+
+                # 插入病患資料
+                sql_patient = """
+                INSERT INTO patients (id, name, age, gender, contact, address, medical_history) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+                val_patient = (patient_id, name, age, gender, contact, address, medical_history)
+                cursor.execute(sql_patient, val_patient)
+
                 dbConn.commit()
-                update_users()  # 更新 users 列表
-                flash(f'{username}！註冊成功！')
+                flash(f'{name}！註冊成功！')
                 return redirect(url_for('login'))
             except myconn.Error as err:
+                dbConn.rollback()
                 flash(f'註冊失敗：{err}', 'error')
                 return render_template('signup.html', error="註冊失敗")
             finally:
