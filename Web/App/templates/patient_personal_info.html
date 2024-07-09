@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <title>個人資料 - 電子健康病例</title>
 
     <style>
@@ -92,6 +93,20 @@
         #medical-history {
             grid-column: 1 / -1;
         }
+        .info-container {
+            display: inline-flex;
+            align-items: center;
+        }
+        .masked-info {
+            margin-right: 5px;
+        }
+        .toggle-mask {
+            cursor: pointer;
+            color: #3f51b5;
+        }
+        .toggle-mask:hover {
+            color: #1a237e;
+        }
     </style>
 </head>
 <body>
@@ -117,12 +132,30 @@
         <section id="personal-info" aria-labelledby="info-heading">
             <h2 id="info-heading">個人資料</h2>
             <div class="profile-info">
-                <p><strong>ID:</strong> {{ patient.id }}</p>
+                <p>
+                    <strong>ID:</strong> 
+                    <span class="info-container">
+                        <span class="masked-info" data-full="{{ patient.id }}" data-partial="{{ patient.id[:4] }}">{{ patient.id[:4] }}****</span>
+                        <i class="fas fa-eye toggle-mask"></i>
+                    </span>
+                </p>
                 <p><strong>姓名:</strong> {{ patient.name }}</p>
                 <p><strong>年齡:</strong> {{ patient.age }}</p>
                 <p><strong>性別:</strong> {{ patient.gender }}</p>
-                <p><strong>聯絡電話:</strong> {{ patient.contact }}</p>
-                <p><strong>地址:</strong> {{ patient.address }}</p>
+                <p>
+                    <strong>聯絡電話:</strong> 
+                    <span class="info-container">
+                        <span class="masked-info" data-full="{{ patient.contact }}" data-partial="{{ patient.contact[:4] }}">{{ patient.contact[:4] }}****</span>
+                        <i class="fas fa-eye toggle-mask"></i>
+                    </span>
+                </p>
+                <p>
+                    <strong>地址:</strong> 
+                    <span class="info-container">
+                        <span class="masked-info" data-full="{{ patient.address }}" data-partial="{{ patient.address[:10] }}">{{ patient.address[:10] }}****</span>
+                        <i class="fas fa-eye toggle-mask"></i>
+                    </span>
+                </p>
                 <div id="medical-history">
                     <p><strong>病史:</strong></p>
                     <p>{{ patient.medical_history }}</p>
@@ -130,5 +163,30 @@
             </div>
         </section>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const infoContainers = document.querySelectorAll('.info-container');
+            
+            infoContainers.forEach(container => {
+                const maskedInfo = container.querySelector('.masked-info');
+                const toggleIcon = container.querySelector('.toggle-mask');
+                
+                toggleIcon.addEventListener('click', function() {
+                    const fullInfo = maskedInfo.getAttribute('data-full');
+                    const partialInfo = maskedInfo.getAttribute('data-partial');
+                    
+                    if (maskedInfo.textContent.includes('****')) {
+                        maskedInfo.textContent = fullInfo;
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    } else {
+                        maskedInfo.textContent = partialInfo + '****';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    }
+                });
+            });
+        });
+        </script>
 </body>
 </html>
