@@ -15,13 +15,13 @@ def checkID(id):
     digit_num = 0
     for i in range(8):
         digit_num += int(digit[i]) * (8-i)
-    digit_num = digit_num + (letter_num//10) + (letter_num%10) * 9
+    digit_num = digit_num + (letter_num//10) + (letter_num%10) * 9  
 
     # 判斷檢查碼是否正確
-    if 10 - (digit_num%10) != int(check_num):
+    if (10 - (digit_num%10))%10 != int(check_num):
         print("Error")
     else:
         print("Welcome")
 
-checkID(id)
 id = input("ID: ")
+checkID(id)
