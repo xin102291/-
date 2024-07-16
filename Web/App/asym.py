@@ -1,5 +1,5 @@
-from utils import *
-from binary import *
+from App.utils import *
+from App.binary import *
 
 class authentication:
     def __init__(self, n, q, bound, scale, A_size, B_size, sk_size):

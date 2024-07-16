@@ -8,26 +8,38 @@ import bcrypt
 import pandas as pd
 from mysql.connector import Error
 from App.patient_full_info import *
+from App.key import *
+from App.id_card import *
+from App.asym import *
+import logging
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
-
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app.secret_key = os.urandom(20)
 login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.session_protection = "strong"
 login_manager.login_view = 'login'
-login_manager.login_message = '請先登入'
+
 
 
 # 全局變量
 users = []
-dbConn = None
 is_first_request = True
 id = ""
 pwd = ""
-user_type = ""
+q = 999999937
+n = 3
+scale = 10000
+bound = 5
+A_size = 8
+B_size = 32
+sk_size = 12
+
+E = authentication(n, q, bound, scale, A_size, B_size, sk_size)
 
 @app.before_request
 def before_request():
@@ -36,15 +48,9 @@ def before_request():
         dbConn = create_connection()
         if dbConn:
             print("Database connection established.")
-            update_users()
+            update_users(dbConn)
             print("Users list initialized.")
         is_first_request = False
-
-@app.teardown_appcontext
-def teardown_appcontext(exception=None):
-    global dbConn
-    close_connection(dbConn)
-    print("Database connection closed.")
 
 # 數據庫連接函數
 def create_connection():
@@ -66,19 +72,15 @@ def close_connection(connection):
         connection.close()
 
 # 更新 users 列表的函數
-def update_users():
-    global users, dbConn
+def update_users(dbConn):
+    global users
     if dbConn:
         try:
             cursor = dbConn.cursor(buffered=True)
-            cursor.execute("SELECT id FROM `users`;")
+            cursor.execute("SELECT id FROM `patients`;")
             users = [i[0] for i in cursor.fetchall()]
         finally:
             cursor.close()
-
-
-
-
 
 class User(UserMixin):
     def __init__(self, id):
@@ -88,12 +90,12 @@ class User(UserMixin):
         return self.id
 
 @login_manager.user_loader
-def user_loader(student):
-    if student not in users:
+def user_loader(patient):
+    if patient not in users:
         return
 
-    user = User(student)
-    user.id = student
+    user = User(patient)
+    user.id = patient
     return user
 
 
@@ -104,28 +106,44 @@ def request_loader(request):
         return
     connection = create_connection()
     cursor = connection.cursor(buffered=True)
-    cursor.execute(f"select password from `users` where id='{id}';")
-    password = cursor.fetchone()
-    if password and bcrypt.checkpw(pwd.encode(),password[0].encode()):
+    (pk, sk) = asym_key(id, pwd, n, q, bound, A_size, B_size, sk_size)
+    cursor.execute("SELECT pk FROM patients WHERE id = %s", (id,))
+    pk = cursor.fetchone()[0]
+    print("id: ",id)
+    print("pk: ",pk)
+    if Authentication(pk,sk):
+        print("成!")
         user = User(id)
-        user.is_authenticated = bcrypt.checkpw(pwd.encode(),password[0].encode())
+        user.is_authenticated = True
         return user
     return None
 
 
+def Authentication(pk,sk):
+    m = random.randrange(0,9999,1)
+    # 私鑰產生簽章
+    c = E.encrypt(m, pk, sk)
+    # 公鑰驗證簽章
+    p = E.decrypt(c, pk)
+    # 驗證原本生成的訊息與簽章是否一致
+    if m == p:
+        return 1
+    else:
+        return 0
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    global id,pwd,user_type 
+    global id,pwd
     if request.method == 'GET':
         return render_template("login.html")
     
-    user_type = request.form.get('user_type')
     user_id = request.form.get('user_id')
-    password = request.form.get('password')
+    hashed_password = request.form.get('hashed_password')
     id = user_id
-    pwd = password
+    pwd = hashed_password
 
-    if not user_id or not password:
+    if not user_id or not hashed_password:
         return render_template('login.html', error='請輸入帳號和密碼')
 
 
@@ -134,39 +152,26 @@ def login():
         try:
             cursor = connection.cursor(buffered=True)
             # 首先檢查用戶是否存在於 users 表中
-            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            cursor.execute("SELECT * FROM patients WHERE id = %s", (user_id,))
             user_data = cursor.fetchone()
 
             if not user_data:
                 return render_template('login.html', error='帳號不存在')
-
-            if not bcrypt.checkpw(password.encode(),user_data[2].encode()):
-                return render_template('login.html', error='密碼或帳號錯誤')
-
-            # 檢查用戶是否存在於相應的表中（patients 或 doctors）
-            table_name = 'patients' if user_type == 'patients' else 'doctors'
-            cursor.execute(f"SELECT * FROM {table_name} WHERE id = %s", (user_id,))
-            specific_user_data = cursor.fetchone()
-
-            if not specific_user_data:
-                if user_type == "doctors":
-                    return render_template('login.html', error='此帳號不是醫生')
-                else:
-                    return render_template('login.html', error='此帳號不是病患')
-
-            # 登入成功
-            user = User(user_id)
-            user.id = id
-            login_user(user)
-            
-            # 根據用戶類型重定向到不同的首頁
-            if user_type == 'patients':
-                return redirect(url_for('home'))
+            (pk, sk) = asym_key(id, hashed_password, n, q, bound, A_size, B_size, sk_size)
+            cursor.execute("SELECT pk FROM patients WHERE id = %s", (user_id,))
+            pk = cursor.fetchone()[0]
+            print("pk:",pk)
+            if Authentication(pk,sk):
+                # 登入成功
+                user = User(user_id)
+                user.id = user_id
+                login_user(user)
+                print("成功")
+                return jsonify({"success": True, "message": "註冊成功！"}), 200
+                # return redirect(url_for('home'))
             else:
-                return redirect(url_for('doctor_home'))
-
+                return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
         finally:
-            cursor.close()
             close_connection(connection)
 
     error = '無法連接到數據庫'
@@ -181,63 +186,53 @@ def logout():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    global n,q,bound,A_size,B_size,sk_size
+
     if request.method == 'GET':
         return render_template('signup.html')
     elif request.method == 'POST':
-        patient_id = request.form['id']
-        name = request.form['name']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        age = request.form['age']
-        gender = request.form['gender']
-        contact = request.form['contact']
-        address = request.form['address']
-        medical_history = request.form['medical_history']
-
-        # 基本驗證
-        if not all([patient_id, name, password, age, gender, contact, address, medical_history]):
-            return render_template('signup.html', error="請填寫所有必填欄位")
-        if len(password) < 8 or len(password) > 15:
-            return render_template('signup.html', error="密碼長度必須在8到15個字符之間")
-        if password != confirm_password:
-            return render_template('signup.html', error="密碼和確認密碼不一致")
-
+        
+        patient_id = request.form.get('id')
+        name = request.form.get('name')
+        hashed_password = request.form.get('hashed_password')
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        contact = request.form.get('contact')
+        address = request.form.get('address')
+        medical_history = request.form.get('medical_history')
+        #檢查id是否輸入錯誤
+        if checkID(patient_id) == 0:
+            return jsonify({"error": "身分證字號輸入錯誤"}), 400
         # 檢查ID是否已存在
         connection = create_connection()
+        
         if connection:
             try:
                 cursor = connection.cursor(buffered=True)
-                cursor = dbConn.cursor()
                 cursor.execute("SELECT id FROM patients WHERE id = %s", (patient_id,))
                 if cursor.fetchone():
                     cursor.close()
-                    return render_template('signup.html', error="該病患ID已被使用")
-                # 密碼加密
-                hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        
-                
-                # 插入用戶資料
-                sql_user = "INSERT INTO users (id, name, password) VALUES (%s, %s, %s)"
-                val_user = (patient_id, name, hashed_password)
-                cursor.execute(sql_user, val_user)
-
+                    print("該病患ID已被使用")
+                    return jsonify({"error": "該病患ID已被使用"}), 400
+                # 建立公鑰
+                print(hashed_password)
+                (pk, sk) = asym_key(patient_id, hashed_password, n, q, bound, A_size, B_size, sk_size)
                 # 插入病患資料
                 sql_patient = """
-                INSERT INTO patients (id, name, age, gender, contact, address, medical_history) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO patients (id, name, age, gender, contact, address, medical_history,pk) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s,%s)
                 """
-                val_patient = (patient_id, name, age, gender, contact, address, medical_history)
+                val_patient = (patient_id, name, age, gender, contact, address, medical_history,pk)
                 cursor.execute(sql_patient, val_patient)
 
-                dbConn.commit()
-                flash(f'{name}！註冊成功！')
-                return redirect(url_for('login'))
-            except myconn.Error as err:
-                dbConn.rollback()
-                flash(f'註冊失敗：{err}', 'error')
-                return render_template('signup.html', error="註冊失敗")
+                connection.commit()
+                return jsonify({"success": True, "message": f"{name}！註冊成功！"}), 200
+            except Exception as e:
+                connection.rollback()
+                return jsonify({"error": f"註冊失敗：{str(e)}"}), 500
             finally:
-                cursor.close()
+                close_connection(connection)
+               
 
         return render_template('signup.html', error="無法連接到數據庫")
 

@@ -22,7 +22,7 @@ pw = input("Enter the password (8~15 letters): ") # 123456789
 # 檢查 id 跟 pw 有沒有符合格式
 flag1 = 0 # id 是否為 10 碼
 flag2 = 0 # check number 是否正確
-flag3 = 0 # 密碼長度是否介於 8~10
+flag3 = 0 # 密碼長度是否介於 8~15
 while 1:
     # 檢查 id 長度
     if len(id) == 10:

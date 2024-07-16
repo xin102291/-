@@ -95,13 +95,7 @@
 <body>
     <div class="login-container">
         <h1>電子健康病例系統</h1>
-        <form method="POST" action="/login">
-            <label for="user_type">身份</label>
-            <select id="user_type" name="user_type">
-                <option value="patients">病患</option>
-                <option value="doctors">醫生</option>
-            </select>
-            
+        <form id="login-form" method="POST" action="/login">
             <label for="user_id">帳號</label>
             <input type="text" id="user_id" name="user_id" required>
             
@@ -118,5 +112,42 @@
             <a href="/signup">還沒有帳號？立即註冊</a>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault(); // 阻止表單的默認提交行為
+
+            var userId = document.getElementById('user_id').value;
+            var password = document.getElementById('password').value;
+
+            // 合併帳號和密碼
+            var combined = userId + password;
+
+            // 使用 CryptoJS 進行 SHA-224 處理
+            var hashed = CryptoJS.SHA224(combined).toString();
+
+            // 創建一個新的表單數據對象
+            var formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('hashed_password', hashed);
+
+            // 發送表單數據到後端
+            fetch('/login', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert("登入成功");
+                      window.location.href = '/home';
+                  } else {
+                      alert("登入失敗: " + data.message);
+                  }
+              })
+              .catch(error => {
+                  console.error("Error:", error);
+              });
+        });
+    </script>
 </body>
 </html>

@@ -55,10 +55,6 @@ if __name__ == "__main__":
         p = E_server.decrypt(msg, pk_server)
         if(p == m):
             print("驗證成功")
-
-    
-    
-    
     send_data(client,"CONNECT")
     
 
