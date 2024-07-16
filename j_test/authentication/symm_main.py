@@ -27,6 +27,8 @@ E = LEWSymmetric(n, q, bound, scale)
 print("session key: ")
 array = list(map(int, input().split(' ')))
 session_key = array[0:10]
+# 92 47 38 92 87 38 94 4 42 61
+#(後面不要加空格)
 
 # 加密訊息
 print("\nEncrypt")

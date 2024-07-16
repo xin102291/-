@@ -16,8 +16,8 @@ A_size = 8
 B_size = 32
 sk_size = 12
 
-id = input("Enter the ID (10 letters): ")
-pw = input("Enter the password (8~15 letters): ")
+id = input("Enter the ID (10 letters): ") # IOT1234561
+pw = input("Enter the password (8~15 letters): ") # 123456789
 
 # 檢查 id 跟 pw 有沒有符合格式
 flag1 = 0 # id 是否為 10 碼
