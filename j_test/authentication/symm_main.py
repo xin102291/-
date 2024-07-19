@@ -5,7 +5,7 @@ import numpy as np
 
 q = 100003
 n = 10
-scale = 10000
+scale = 1000
 bound = 5
 
 # 輸入要加密的訊息，並檢查長度是否小於 10
