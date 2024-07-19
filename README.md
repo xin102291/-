@@ -1,10 +1,3 @@
-# 創建資料表
-CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    password VARCHAR(1000) NOT NULL
-);
-
 # 使用網站時請記得創建pqc使用者與server資料庫
 dbConn = myconn.connect(
     host = 'localhost',   
@@ -36,7 +29,8 @@ CREATE TABLE IF NOT EXISTS patients (
     gender ENUM('男', '女') NOT NULL,
     contact VARCHAR(15) NOT NULL,
     address VARCHAR(255) NOT NULL,
-    medical_history TEXT NOT NULL
+    medical_history TEXT NOT NULL,
+    pk CHAR(200) NOT NULL
 );
 
 CREATE TABLE hospitals (

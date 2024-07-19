@@ -136,38 +136,123 @@
             <div>
                 <input type="submit" value="註冊">
             </div>
+            <div id="error-messages"></div>
         </form>
         <p style="text-align: center; margin-top: 20px;">已有帳號？<a href="/login">登入</a></p>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.js"></script>
     <script>
+        document.getElementById('password').addEventListener('input', function() {
+            var password = this.value;
+            var strengthBar = document.getElementById('password-strength');
+            var strength = calculatePasswordStrength(password);
+            
+            strengthBar.style.width = strength + '%';
+            if (strength < 50) {
+                strengthBar.style.backgroundColor = 'red';
+            } else if (strength < 80) {
+                strengthBar.style.backgroundColor = 'orange';
+            } else {
+                strengthBar.style.backgroundColor = 'green';
+            }
+        });
+
+        function calculatePasswordStrength(password) {
+            var strength = 0;
+            if (password.length > 8) strength += 20;
+            if (/[A-Z]/.test(password)) strength += 20;
+            if (/[a-z]/.test(password)) strength += 20;
+            if (/[0-9]/.test(password)) strength += 20;
+            if (/[\W]/.test(password)) strength += 20;
+            return strength;
+        }
+
         function togglePasswordVisibility(inputId) {
             var input = document.getElementById(inputId);
             input.type = input.type === "password" ? "text" : "password";
         }
 
-        document.getElementById('password').addEventListener('input', function() {
-            var password = this.value;
-            var strength = 0;
-            if (password.match(/[a-z]+/)) strength += 1;
-            if (password.match(/[A-Z]+/)) strength += 1;
-            if (password.match(/[0-9]+/)) strength += 1;
-            if (password.match(/[$@#&!]+/)) strength += 1;
-
-            var strengthBar = document.getElementById('password-strength');
-            var colors = ["", "#ff4d4d", "#ffa64d", "#99cc00", "#4dff4d"];
-            strengthBar.style.width = (strength * 25) + "%";
-            strengthBar.style.backgroundColor = colors[strength];
-        });
-
         document.getElementById('signup-form').addEventListener('submit', function(e) {
+            e.preventDefault();  // 阻止表單的默認提交行為
+
+            var id = document.getElementById('id').value;
             var password = document.getElementById('password').value;
             var confirmPassword = document.getElementById('confirm_password').value;
 
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                alert("密碼和確認密碼不一致");
+            var requiredFields = document.querySelectorAll('[required]');
+            var allFilled = Array.from(requiredFields).every(field => field.value.trim() !== '');
+            
+            function showError(message) {
+                var errorDiv = document.getElementById('error-messages');
+                errorDiv.innerHTML = '<p class="error">' + message + '</p>';
             }
+
+            if (!allFilled) {
+                showError("請填寫所有必填欄位");
+                return;
+            }
+
+            if (password.length < 8 || password.length > 15) {
+                showError("密碼長度必須在8到15個字符之間");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError("密碼和確認密碼不一致");
+                return;
+            }
+
+            
+            // 清除之前的錯誤消息
+            document.getElementById('error-messages').innerHTML = '';
+
+            // 合併 ID 和密碼
+            var combined = id + password;
+
+            // 使用 CryptoJS 進行 SHA-224 處理
+            var hashed = CryptoJS.SHA224(combined).toString();
+
+            // 創建一個新的表單數據對象
+            var formData = new FormData();
+            formData.append('id', id);  // ID 還是需要傳送
+            formData.append('hashed_password', hashed);  // 傳送hash後的數據
+            formData.append('name', document.getElementById('name').value);
+            formData.append('age', document.getElementById('age').value);
+            formData.append('gender', document.getElementById('gender').value);
+            formData.append('contact', document.getElementById('contact').value);
+            formData.append('address', document.getElementById('address').value);
+            formData.append('medical_history', document.getElementById('medical_history').value);
+
+            // 發送表單數據到後端
+            fetch('/signup', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.headers.get("content-type")?.includes("application/json")) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || '發生未知錯誤');
+                        });
+                    } else {
+                        throw new Error('伺服器錯誤');
+                    }
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/login';
+                } else {
+                    throw new Error(data.error || '發生未知錯誤');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error-messages').innerHTML = '<p class="error">' + error.message + '</p>';
+            });
         });
     </script>
 </body>

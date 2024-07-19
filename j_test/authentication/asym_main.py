@@ -37,6 +37,7 @@ m = int(input())
 print("\nEncrypt")
 c = E.encrypt(m, pk, sk)
 print("c: ", c)
+print(len(c))
 
 # 公鑰驗證簽章
 print("\nDecrypt")
