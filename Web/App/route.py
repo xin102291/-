@@ -4,7 +4,6 @@ import mysql.connector as myconn
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import random
-import bcrypt
 import pandas as pd
 from mysql.connector import Error
 from App.patient_full_info import *
@@ -35,7 +34,8 @@ q = 999999937
 n = 3
 scale = 10000
 bound = 5
-A_size = 8
+#2進制有號數，每個數的bit大小  ex. A最大值為128-1(2^7)
+A_size = 8      
 B_size = 32
 sk_size = 12
 

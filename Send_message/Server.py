@@ -5,17 +5,42 @@ import json
 from asym import *
 from key import *
 from symm import *
-
+import os
 q = 999999937
 n = 3
 scale = 10000
-B = 5
+bound = 5
+A_size = 8
+B_size = 32
+sk_size = 12
 
-E_iot = authentication(n, q, B, scale)
-(pk_iot, sk_iot) = asym_key("0123456789", n, q, B)
 
-E_server = authentication(n, q, B, scale)
-(pk_server, sk_server) = asym_key("1104427321", n, q, B)
+
+E_iot = authentication(n, q, bound, scale, A_size, B_size, sk_size)
+pk_iot = ""
+
+E_server = authentication(n, q, bound, scale, A_size, B_size, sk_size)
+pk_server = ""
+sk_server = ""
+
+def get_key(iot_id):
+    global pk_server,sk_server,pk_iot
+    filename = "items.json"
+    target_dir = 'Send_message'
+    os.makedirs(target_dir, exist_ok=True)
+    file_path = os.path.join(target_dir, filename)
+    try:
+        with open(file_path, "r") as file:
+            items = json.load(file)
+    except FileNotFoundError:
+        print("找不到文件，無法更新數據")
+
+    for item in items:
+        if item["id"] == "SERVER1231":
+            pk_server = item["pk"]
+            sk_server = item["sk"]
+        if item["id"] == iot_id:
+            pk_iot = item["pk"]
 ADDRESS = ("192.168.50.173",88)
 
 g_socket_server = None 
@@ -47,24 +72,43 @@ def message_handle(client,info):
             msg = bytes.decode(encoding = "utf8")
             jd = json.loads(msg)
             cmd = jd["COMMAND"]
-            client_type = jd["client_type"]
+            client_name = jd["client_name"]
             if "CONNECT" == cmd:
-                g_conn_pool[client_type] = client
-                print("on client connect: "+client_type,info)
+                g_conn_pool[client_name] = client
+                # print("on client connect: "+client_name,info)
                 # client.sendall("ACK!".encode(encoding="utf8"))
+                #session_key
+                print("session_key")
+                E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
+                # 產生五個隨機數，存入 m array
+                m = [0 for _ in range(5)]
+                print("Generate a random message.")
+                for i in range(5):
+                    m[i] = random.randint(0, 9999)
+                # 將 m array 加密，存入 c array
+                c = [0 for _ in range(5)]
+                for i in range(5):
+                    c[i] = E.encrypt(m[i], pk_iot)
+                print(c)
+                c= [c]
+                c = json.dumps(c)
+                client.sendall(c.encode(encoding="utf8"))
+                
+                print("on client connect: "+client_name,info)
             elif "SEND_DATA" == cmd:
+                get_key(client_name)
                 data = jd['data']['data']
-                if len(data) == 3 and len(data[0]) == 3: #以長度判斷是否為正常驗證訊息
-                    print("接收訊息:",jd['data']['data'])
+                print("接收訊息: ",data)
+                if len(data) == 2: #以長度判斷是否為正常驗證訊息
                     print("驗證簽章")
-                    c = data[0:2]
-                    p = E_iot.decrypt(c, pk_iot)
+                    c = data[0]
+                    p = E_iot.decrypt(c[0], pk_iot)
                     if(p == m):
                         print("驗證成功")
                         print("產生簽章:")
-                        c = E_server.encrypt(data[2], pk_server, sk_server)
+                        c = E_server.encrypt(data[1][0], pk_server, sk_server)
                         print(c)
-                        c= list(c)
+                        c= [c]
                         c = json.dumps(c)
                         client.sendall(c.encode(encoding="utf8"))
                         
@@ -87,23 +131,23 @@ def message_handle(client,info):
                     for i in p:
                         if(i != 0):
                             text_p += str(i)
-                    print(f"{client_type}:{text_p}")
-                    # print(f"{client_type}:{jd['data']['data']}")
+                    print(f"{client_name}:{text_p}")
+                    # print(f"{client_name}:{jd['data']['data']}")
                 
                 
                 
         except Exception as e:
             # print(e)
-            remove_client(client_type)
+            remove_client(client_name)
             break
 
 
-def remove_client(client_type):
-    client = g_conn_pool[client_type]
+def remove_client(client_name):
+    client = g_conn_pool[client_name]
     if None != client:
         client.close()
-        g_conn_pool.pop(client_type)
-        print("client offline: "+client_type)
+        g_conn_pool.pop(client_name)
+        print("client offline: "+client_name)
 
 if __name__ == '__main__':
     init()
