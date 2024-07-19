@@ -14,6 +14,7 @@ A_size = 8
 B_size = 32
 sk_size = 12
 
+session_key = ""
 
 
 E_iot = authentication(n, q, bound, scale, A_size, B_size, sk_size)
@@ -62,6 +63,7 @@ def accp_client():
 
 
 def message_handle(client,info):
+    global n,q,bound,scale,A_size,B_size,sk_size,pk_iot,sk_server,pk_server,session_key
     # client.sendall("connect server successfully!".encode(encoding="utf8"))
     print("產生驗證訊息")
     m = random.randint(0, 9999)
@@ -79,26 +81,35 @@ def message_handle(client,info):
                 # client.sendall("ACK!".encode(encoding="utf8"))
                 #session_key
                 print("session_key")
-                E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
-                # 產生五個隨機數，存入 m array
-                m = [0 for _ in range(5)]
-                print("Generate a random message.")
-                for i in range(5):
-                    m[i] = random.randint(0, 9999)
-                # 將 m array 加密，存入 c array
-                c = [0 for _ in range(5)]
-                for i in range(5):
-                    c[i] = E.encrypt(m[i], pk_iot)
-                print(c)
-                c= [c]
-                c = json.dumps(c)
-                client.sendall(c.encode(encoding="utf8"))
+                try:
+                    E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
+                    # Generate five random numbers, store them in m array
+                    m = [random.randint(0, 9999) for _ in range(5)]
+                    # print("Generate a random message:", m)
+                    session_key = [0 for _ in range(10)]
+                    count=0
+                    for i in range(5):
+                        # 將每個 p array 中的數再拆成兩組
+                        session_key[count] = m[i]//100
+                        count += 1
+                        session_key[count] = m[i] % 100
+                        count += 1
+                    print(session_key)
+                    # Encrypt m array and store in c array
+                    c = [E.encrypt(num, pk_iot) for num in m]
+                    # print("Encrypted messages:", c)
+                    
+                    c = json.dumps(c)
+                    client.sendall(c.encode(encoding="utf8"))
+                except Exception as e:
+                    print("Error during encryption:", e)
                 
                 print("on client connect: "+client_name,info)
             elif "SEND_DATA" == cmd:
                 get_key(client_name)
                 data = jd['data']['data']
                 print("接收訊息: ",data)
+                print(len(data))
                 if len(data) == 2: #以長度判斷是否為正常驗證訊息
                     print("驗證簽章")
                     c = data[0]
@@ -117,20 +128,18 @@ def message_handle(client,info):
                         client.sendall("0".encode(encoding="utf8"))
                 # print(jd['data']['data'])
                 else:
-                    q = 1000
-                    # n = len(value)
+                    q = 100003
                     n = 10
-                    scale = 10
-                    B = 5
-                    E = LEWSymmetric(n, q, B, scale)
+                    scale = 1000
+                    bound = 5
+                    E = LEWSymmetric(n, q, bound, scale)
+                    print()
                     # print(jd['data']['data'])
-                    array = list(map(int, input("key: ").split(' ')))
-                    s = array[0:10]
-                    p = E.decrypt(s,jd['data']['data'])
+                    p = E.decrypt(session_key, data)
                     text_p = ""
                     for i in p:
                         if(i != 0):
-                            text_p += str(i)
+                            text_p += chr(i)
                     print(f"{client_name}:{text_p}")
                     # print(f"{client_name}:{jd['data']['data']}")
                 

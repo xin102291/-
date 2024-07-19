@@ -1,53 +1,64 @@
-# symm.py
-
-import random
 from utils import *
 import numpy as np
 
 class LEWSymmetric:
-    def __init__(self, n, q, B, scale):
+    def __init__(self, n, q, bound, scale):
         self.n = n
         self.q = q
-        self.B = B
+        self.bound = bound
         self.scale = scale
 
+    # 加密訊息
     def encrypt(self, s, m):
-        A = sample_uniform_matrix(self.n, self.q)
-        b = matrix_vector_multiplication(A, s, self.q) #As
-        e = sample_bounded_vector(self.n, self.B)
-        b = vector_vector_addition(b, e, self.q)
-        scale_m = [self.q // self.scale * m[i] % self.q for i in range(self.n)]
-        c = vector_vector_addition(b, scale_m, self.q)
+        A = sample_uniform_matrix(self.n, self.q) # 隨機生成一個 matrix 做為 A
+        B = matrix_vector_multiplication(A, s, self.q) # B = As
+        e = sample_bounded_vector(self.n, self.bound) # 隨機生成一個 vector 做為干擾值
+        B = vector_vector_addition(B, e, self.q) # B = As + e
+        scale_m = [self.q // self.scale * m[i] % self.q for i in range(self.n)] # m[i] = m[i] * (q/scale)
+        c = vector_vector_addition(B, scale_m, self.q) # c = B + m
+
+        # 將 A 以及生成訊息轉成字串並接在一起
         text_A = ""
         for i in range(self.n):
             for j in range(self.n):
-                text_A += "%03d" % A[i][j]
+                text_A += "%05d" % A[i][j]
         text_c = ""
         for i in c:
-            text_c += "%03d" % i
+            text_c += "%05d" % i
         text = text_A + text_c
         return(text)
     
+    # 解密訊息
     def decrypt(self, s, ctx):
         j=0
         k=0
         n = self.n
-        text_A = ctx[0 : 3 * n * n]
-        text_c = ctx[3 * n * n : len(ctx)]
-        A = np.zeros((self.n, self.n), dtype=np.int16)
-        c = np.zeros((self.n), dtype=np.int16)
+        digit = 5
+        text_A = ctx[0 : digit * n * n]
+        text_c = ctx[digit * n * n : len(ctx)]
+        # print("text_c\n",text_c)
+        A = [[0 for _ in range(n)] for _ in range(n) ]
+        c = [0 for _ in range(n)]
 
-        for i in range(0, 3 * n * n, 3):
-            A[j][k] = int(text_A[i] + text_A[i+1] + text_A[i+2])
-            k += 1
-            if(k == 10):
-                k = 0
-                j +=1
+        row = 0
+        col = 0
+        for i in range(0, len(text_A), digit):
+            tmp = ""
+            for j in range(digit):
+                tmp += text_A[i + j]
+            A[row][col] = int(tmp)
+            col+=1
+            if(col == n):
+                col = 0
+                row += 1
 
-        for i in range(0, n):
-            c[i] = int(text_c[3 * i] + text_c[3 * i + 1] + text_c[3 * i + 2])
-
-
+        col = 0
+        for i in range(0, len(text_c), digit):
+            tmp = ""
+            for j in range(digit):
+                tmp += text_c[i + j]
+            c[col] = int(tmp)
+            col += 1
 
         As = matrix_vector_multiplication(A, s, self.q)
         b = [(c[i] - As[i]) % self.q for i in range(self.n)]

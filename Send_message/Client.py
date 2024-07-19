@@ -13,7 +13,7 @@ bound = 5
 A_size = 8
 B_size = 32
 sk_size = 12
-
+session_key = ""
 E_iot = authentication(n, q, bound, scale, A_size, B_size, sk_size)
 pk_iot = ""
 sk_iot = ""
@@ -81,22 +81,39 @@ if __name__ == "__main__":
             print("驗證成功")
     send_data(client,"CONNECT")
     msg = json.loads(client.recv(1024).decode(encoding='utf8'))
-    print(msg)
+    # print(msg)
+    E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
+    p = [0 for i in range(5)]
+    for i in range(5):
+        p[i] = E.decrypt(msg[i], sk_iot)
+    # 生成 session key
+    session_key = [0 for _ in range(10)]
+    count=0
+    for i in range(5):
+        # 將每個 p array 中的數再拆成兩組
+        session_key[count] = p[i]//100
+        count += 1
+        session_key[count] = p[i] % 100
+        count += 1
+    # 最後會有 10 組數字，作為 session key 使用
+    print("session key: ", session_key)
     
 
     while True:
+        q = 100003
+        n = 10
+        scale = 1000
+        bound = 5
+
         data = input("請輸入訊息: ")
         if data == "exit":
             break
-        E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
-        # 產生五個隨機數，存入 m array
-        m = [0 for _ in range(5)]
-        print("Generate a random message.")
-        for i in range(5):
-            m[i] = random.randint(0, 9999)
-        array = list(map(int, input("key: ").split(' ')))
-        s = array[0:10]
-        c = E.encrypt(s, m)
+        m = [0 for _ in range(n)]
+        for i in range(0, len(data)):
+            m[10 - len(data) + i] = ord(data[i])
+        E = LEWSymmetric(n, q, bound, scale)
+        c = E.encrypt(session_key, m)
+        print(len(c))
         send_data(client,"SEND_DATA",data = c)
         
         
