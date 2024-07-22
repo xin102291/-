@@ -1,11 +1,9 @@
 from flask import render_template
 from flask import Flask,render_template,request,flash,redirect,url_for, jsonify
-import mysql.connector as myconn
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import random
 import pandas as pd
-from mysql.connector import Error
 from App.patient_full_info import *
 from App.key import *
 from App.id_card import *

@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
-from datetime import datetime
 from App.SQL import *
 
 # 創建數據庫引擎
