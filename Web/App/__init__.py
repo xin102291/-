@@ -13,7 +13,6 @@ def create_app(app):
     app.add_url_rule('/patient_medical_documents', 'patient_medical_documents', patient_medical_documents)
     app.add_url_rule('/datepage', 'datepage', datepage)
     app.add_url_rule('/dashboard', 'dashboard', dashboard)
-    app.add_url_rule('/health', 'health', health)
     app.add_url_rule('/logout', 'logout', logout)
     app.add_url_rule('/signup', 'signup', signup)
     return app

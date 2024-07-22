@@ -279,18 +279,7 @@ def get_iot_data():
 
 
 
-# 載入健康報告數據
-health_data = pd.read_csv('Web\App\health_report.csv', encoding='utf-8')
 
-@app.route('/health', methods=['GET', 'POST'])
-@login_required
-def health():
-    return render_template("health.html")
-
-@app.route('/api/data')
-def get_data():
-    data = health_data.to_dict(orient='records')
-    return jsonify(data)
 
 
 
