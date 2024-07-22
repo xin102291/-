@@ -33,14 +33,14 @@ CREATE TABLE IF NOT EXISTS patients (
     pk CHAR(200) NOT NULL
 );
 
-CREATE TABLE hospitals (
+CREATE TABLE IF NOT EXISTS hospitals (
     id VARCHAR(10) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     address VARCHAR(255) NOT NULL,
     contact VARCHAR(15) NOT NULL
 );
 
-CREATE TABLE doctors (
+CREATE TABLE IF NOT EXISTS  doctors (
     id VARCHAR(10) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     age INT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE doctors (
     FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
 );
 
-CREATE TABLE medical_records (
+CREATE TABLE IF NOT EXISTS  medical_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     record_date DATE NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE medical_records (
     FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
 );
 
-CREATE TABLE medications (
+CREATE TABLE IF NOT EXISTS  medications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     medication_name VARCHAR(100) NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE medications (
     FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
 
-CREATE TABLE tests_and_results (
+CREATE TABLE IF NOT EXISTS  tests_and_results (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     test_date DATE NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE tests_and_results (
     FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
 
-CREATE TABLE appointments (
+CREATE TABLE IF NOT EXISTS  appointments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     appointment_date DATE NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE appointments (
     FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
 
-CREATE TABLE health_reminders (
+CREATE TABLE IF NOT EXISTS  health_reminders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     reminder TEXT NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE health_reminders (
     FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
 
-CREATE TABLE medical_documents (
+CREATE TABLE IF NOT EXISTS  medical_documents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id VARCHAR(10) NOT NULL,
     document_name VARCHAR(100) NOT NULL,
