@@ -20,6 +20,9 @@ private key = sk
 
 接下來就可以使用asym_main.py進行身分驗證或是session_key.py產生會議金鑰
 
+GRANT ALL PRIVILEGES ON *.* TO 'pqc'@'%' IDENTIFIED BY '123456';
+FLUSH PRIVILEGES;
+
 # 病患
 
 CREATE TABLE IF NOT EXISTS patients (
