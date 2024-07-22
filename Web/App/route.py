@@ -10,10 +10,15 @@ from App.patient_full_info import *
 from App.key import *
 from App.id_card import *
 from App.asym import *
+from App.SQL import *
 import logging
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql://pqc:123456@localhost/server')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -22,7 +27,6 @@ login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.session_protection = "strong"
 login_manager.login_view = 'login'
-
 
 
 # 全局變量
@@ -43,44 +47,20 @@ E = authentication(n, q, bound, scale, A_size, B_size, sk_size)
 
 @app.before_request
 def before_request():
-    global is_first_request, dbConn, users
+    global is_first_request, users
     if is_first_request:
-        dbConn = create_connection()
-        if dbConn:
-            print("Database connection established.")
-            update_users(dbConn)
-            print("Users list initialized.")
+        update_users()
+        print("Users list initialized.")
         is_first_request = False
 
-# 數據庫連接函數
-def create_connection():
-    try:
-        connection = myconn.connect(
-            host='localhost',
-            user='pqc',
-            password='123456',
-            database='server'
-        )
-        return connection
-    except Error as e:
-        print(f"Error connecting to MySQL database: {e}")
-        return None
-
-# 關閉數據庫連接函數
-def close_connection(connection):
-    if connection:
-        connection.close()
 
 # 更新 users 列表的函數
-def update_users(dbConn):
+def update_users():
     global users
-    if dbConn:
-        try:
-            cursor = dbConn.cursor(buffered=True)
-            cursor.execute("SELECT id FROM `patients`;")
-            users = [i[0] for i in cursor.fetchall()]
-        finally:
-            cursor.close()
+    try:
+        users = [patient.id for patient in Patient.query.with_entities(Patient.id).all()]
+    except Exception as e:
+        print(f"Error updating users list: {e}")
 
 class User(UserMixin):
     def __init__(self, id):
@@ -101,21 +81,30 @@ def user_loader(patient):
 
 @login_manager.request_loader
 def request_loader(request):
-    
+    global id, pwd  # 假設這些是在其他地方定義的全局變量
+
     if id not in users:
-        return
-    connection = create_connection()
-    cursor = connection.cursor(buffered=True)
-    (pk, sk) = asym_key(id, pwd, n, q, bound, A_size, B_size, sk_size)
-    cursor.execute("SELECT pk FROM patients WHERE id = %s", (id,))
-    pk = cursor.fetchone()[0]
-    print("id: ",id)
-    print("pk: ",pk)
-    if Authentication(pk,sk):
-        print("成!")
-        user = User(id)
-        user.is_authenticated = True
-        return user
+        return None
+
+    try:
+        patient = Patient.query.get(id)
+        if patient is None:
+            return None
+
+        pk = patient.pk
+        (_, sk) = asym_key(id, pwd, n, q, bound, A_size, B_size, sk_size)
+        
+        # print("id: ", id)
+        # print("pk: ", pk)
+        
+        if Authentication(pk, sk):
+            print("成功!")
+            user = User(id)
+            user.is_authenticated = True
+            return user
+    except Exception as e:
+        print(f"Error in request_loader: {e}")
+    
     return None
 
 
@@ -134,7 +123,8 @@ def Authentication(pk,sk):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    global id,pwd
+    global id, pwd
+
     if request.method == 'GET':
         return render_template("login.html")
     
@@ -146,36 +136,27 @@ def login():
     if not user_id or not hashed_password:
         return render_template('login.html', error='請輸入帳號和密碼')
 
+    try:
+        patient = Patient.query.get(user_id)
 
-    connection = create_connection()
-    if connection:
-        try:
-            cursor = connection.cursor(buffered=True)
-            # 首先檢查用戶是否存在於 users 表中
-            cursor.execute("SELECT * FROM patients WHERE id = %s", (user_id,))
-            user_data = cursor.fetchone()
+        if not patient:
+            return render_template('login.html', error='帳號不存在')
 
-            if not user_data:
-                return render_template('login.html', error='帳號不存在')
-            (pk, sk) = asym_key(id, hashed_password, n, q, bound, A_size, B_size, sk_size)
-            cursor.execute("SELECT pk FROM patients WHERE id = %s", (user_id,))
-            pk = cursor.fetchone()[0]
-            print("pk:",pk)
-            if Authentication(pk,sk):
-                # 登入成功
-                user = User(user_id)
-                user.id = user_id
-                login_user(user)
-                print("成功")
-                return jsonify({"success": True, "message": "註冊成功！"}), 200
-                # return redirect(url_for('home'))
-            else:
-                return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
-        finally:
-            close_connection(connection)
+        (pk, sk) = asym_key(id, hashed_password, n, q, bound, A_size, B_size, sk_size)
+        
+        if Authentication(patient.pk, sk):
+            # 登入成功
+            user = User(user_id)
+            user.id = user_id
+            login_user(user)
+            print("成功")
+            return jsonify({"success": True, "message": "登入成功！"}), 200
+        else:
+            return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
 
-    error = '無法連接到數據庫'
-    return render_template('login.html', error=error)
+    except Exception as e:
+        print(f"登入過程中發生錯誤: {e}")
+        return render_template('login.html', error='登入過程中發生錯誤')
 
 @app.route('/logout')
 def logout():
@@ -186,12 +167,11 @@ def logout():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    global n,q,bound,A_size,B_size,sk_size
+    global n, q, bound, A_size, B_size, sk_size
 
     if request.method == 'GET':
         return render_template('signup.html')
     elif request.method == 'POST':
-        
         patient_id = request.form.get('id')
         name = request.form.get('name')
         hashed_password = request.form.get('hashed_password')
@@ -200,41 +180,46 @@ def signup():
         contact = request.form.get('contact')
         address = request.form.get('address')
         medical_history = request.form.get('medical_history')
-        #檢查id是否輸入錯誤
+
+        # 檢查id是否輸入錯誤
         if checkID(patient_id) == 0:
             return jsonify({"error": "身分證字號輸入錯誤"}), 400
-        # 檢查ID是否已存在
-        connection = create_connection()
-        
-        if connection:
-            try:
-                cursor = connection.cursor(buffered=True)
-                cursor.execute("SELECT id FROM patients WHERE id = %s", (patient_id,))
-                if cursor.fetchone():
-                    cursor.close()
-                    print("該病患ID已被使用")
-                    return jsonify({"error": "該病患ID已被使用"}), 400
-                # 建立公鑰
-                print(hashed_password)
-                (pk, sk) = asym_key(patient_id, hashed_password, n, q, bound, A_size, B_size, sk_size)
-                # 插入病患資料
-                sql_patient = """
-                INSERT INTO patients (id, name, age, gender, contact, address, medical_history,pk) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s,%s)
-                """
-                val_patient = (patient_id, name, age, gender, contact, address, medical_history,pk)
-                cursor.execute(sql_patient, val_patient)
 
-                connection.commit()
-                return jsonify({"success": True, "message": f"{name}！註冊成功！"}), 200
-            except Exception as e:
-                connection.rollback()
-                return jsonify({"error": f"註冊失敗：{str(e)}"}), 500
-            finally:
-                close_connection(connection)
-               
+        try:
+            # 檢查ID是否已存在
+            existing_patient = Patient.query.get(patient_id)
+            if existing_patient:
+                print("該病患ID已被使用")
+                return jsonify({"error": "該病患ID已被使用"}), 400
 
-        return render_template('signup.html', error="無法連接到數據庫")
+            # 建立公鑰
+            print(hashed_password)
+            (pk, sk) = asym_key(patient_id, hashed_password, n, q, bound, A_size, B_size, sk_size)
+
+            # 創建新的 Patient 對象
+            new_patient = Patient(
+                id=patient_id,
+                name=name,
+                age=age,
+                gender=gender,
+                contact=contact,
+                address=address,
+                medical_history=medical_history,
+                pk=pk
+            )
+
+            # 將新患者添加到數據庫
+            db.session.add(new_patient)
+            db.session.commit()
+
+            return jsonify({"success": True, "message": f"{name}！註冊成功！"}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"註冊過程中發生錯誤: {e}")
+            return jsonify({"error": f"註冊失敗：{str(e)}"}), 500
+
+    return render_template('signup.html', error="無效的請求方法")
 
 @app.route("/datepage", methods=['GET', 'POST'])
 @login_required
