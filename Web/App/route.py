@@ -13,7 +13,11 @@ import logging
 
 global app
 app = Flask(__name__,static_folder="static", static_url_path="/")
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+pymysql://pqc:123456@192.168.1.103:3306/server')
+# 使用環境變量或默認值
+database_url = os.environ.get('DATABASE_URL', 'mysql+pymysql://pqc:123456@localhost/server')
+
+# 設置 SQLAlchemy 配置
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
