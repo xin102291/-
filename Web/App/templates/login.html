@@ -138,15 +138,12 @@
             }).then(response => response.json())
               .then(data => {
                   if (data.success) {
-                      alert("登入成功");
                       window.location.href = '/home';
                   } else {
                       alert("登入失敗: " + data.message);
                   }
               })
-              .catch(error => {
-                  console.error("Error:", error);
-              });
+              
         });
     </script>
 </body>

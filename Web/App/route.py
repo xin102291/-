@@ -142,7 +142,7 @@ def login():
         patient = Patient.query.get(user_id)
 
         if not patient:
-            return render_template('login.html', error='帳號不存在')
+            return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
 
         (pk, sk) = asym_key(id, hashed_password, n, q, bound, A_size, B_size, sk_size)
         
@@ -158,7 +158,8 @@ def login():
 
     except Exception as e:
         print(f"登入過程中發生錯誤: {e}")
-        return render_template('login.html', error='登入過程中發生錯誤')
+        return jsonify({"error": "登入過程中發生錯誤"}), 400
+
 
 @app.route('/logout')
 def logout():
@@ -213,6 +214,7 @@ def signup():
             # 將新患者添加到數據庫
             db.session.add(new_patient)
             db.session.commit()
+            update_users()
 
             return jsonify({"success": True, "message": f"{name}！註冊成功！"}), 200
 
