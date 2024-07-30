@@ -1,117 +1,45 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+    <title>電子健康病例系統 - 登入</title>
+    <!-- Meta-Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>電子健康病例系統 - 登入</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-image: linear-gradient(to bottom right, #3f51b5, #303f9f);
-        }
-        
-        .login-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-        }
-        
-        h1 {
-            color: #3f51b5;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 24px;
-        }
-        
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        label {
-            margin-bottom: 5px;
-            color: #333;
-        }
-        
-        input[type="text"], input[type="password"], select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        
-        select {
-            background-color: white;
-        }
-        
-        button[type="submit"] {
-            background-color: #3f51b5;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        
-        button[type="submit"]:hover {
-            background-color: #303f9f;
-        }
-        
-        .error-message {
-            color: #f44336;
-            text-align: center;
-            margin-top: 10px;
-        }
-        
-        .signup-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .signup-link a {
-            color: #3f51b5;
-            text-decoration: none;
-        }
-        
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <!-- style CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css" media="all">
+    <!-- google fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
 </head>
 <body>
-    <div class="login-container">
-        <h1>電子健康病例系統</h1>
-        <form id="login-form" method="POST" action="/login">
-            <label for="user_id">帳號</label>
-            <input type="text" id="user_id" name="user_id" required>
-            
-            <label for="password">密碼</label>
-            <input type="password" id="password" name="password" required>
-            
-            <button type="submit">登入</button>
-            
-            {% if error %}
-                <p class="error-message">{{ error }}</p>
-            {% endif %}
-        </form>
-        <div class="signup-link">
-            <a href="/signup">還沒有帳號？立即註冊</a>
+    <section class="main">
+        <div class="logo text-center">
+            <h1> <a href="index.html"> 電子健康病例系統 - 登入</a></h1>
         </div>
-    </div>
+        <div class="content-w3ls text-center">
+            <img src="images/admin.png" alt="" class="img-responsive">
+            <form id="login-form" action="#" method="post">
+                <div class="wthree-field">
+                    <input name="text1" id="user_id" type="text" value="" placeholder="Username" required>
+                </div>
+                <div class="wthree-field">
+                    <input name="password" id="password" type="Password" placeholder="Password">
+                </div>
+                <div class="wthree-field">
+                    <button type="submit" class="btn">Sign In</button>
+                </div>
+				{% if error %}
+                <p class="error-message">{{ error }}</p>
+				{% endif %}
+                <div class="login-bottom">
+                    <a href="/signup" class="">Create An Account</a>
+                </div>
+            </form>
+        </div>
+        
+    </section>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.js"></script>
     <script>
         document.getElementById('login-form').addEventListener('submit', function(e) {

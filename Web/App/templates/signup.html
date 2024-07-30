@@ -136,8 +136,8 @@
             <div>
                 <input type="submit" value="註冊">
             </div>
-            <div id="error-messages"></div>
         </form>
+        <div id="error-messages"></div>
         <p style="text-align: center; margin-top: 20px;">已有帳號？<a href="/login">登入</a></p>
     </div>
 
@@ -190,16 +190,19 @@
 
             if (!allFilled) {
                 showError("請填寫所有必填欄位");
+                alert("請填寫所有必填欄位 " + data.message);
                 return;
             }
 
             if (password.length < 8 || password.length > 15) {
                 showError("密碼長度必須在8到15個字符之間");
+                alert("密碼長度必須在8到15個字符之間 " + data.message);
                 return;
             }
 
             if (password !== confirmPassword) {
                 showError("密碼和確認密碼不一致");
+                alert("密碼和確認密碼不一致 " + data.message);
                 return;
             }
 
@@ -247,11 +250,13 @@
                     window.location.href = '/login';
                 } else {
                     throw new Error(data.error || '發生未知錯誤');
+                    alert("註冊失敗: " + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 document.getElementById('error-messages').innerHTML = '<p class="error">' + error.message + '</p>';
+                alert(error.message + data.message);
             });
         });
     </script>
