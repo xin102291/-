@@ -42,7 +42,7 @@ def get_key(iot_id):
             sk_server = item["sk"]
         if item["id"] == iot_id:
             pk_iot = item["pk"]
-ADDRESS = ("192.168.56.1",88)
+ADDRESS = ("192.168.50.173",88)
 
 g_socket_server = None 
 g_conn_pool = {}

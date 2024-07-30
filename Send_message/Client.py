@@ -39,7 +39,7 @@ def get_key(iot_id):
             pk_iot = item["pk"]
             sk_iot = item["sk"]
 
-ADDRESS = ("192.168.50.173",88)
+ADDRESS = ("192.168.56.1",88)
 
 client_name = 'linxinfa'
 

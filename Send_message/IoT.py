@@ -42,8 +42,6 @@ def send_data(client,cmd,**kv):
     # print("send: "+jsonstr)
     client.sendall(jsonstr.encode('utf8'))
 
-def input_client_name():
-    return input("name: ")
 
 def get_key(iot_id):
     global pk_server,sk_iot,pk_iot
@@ -65,7 +63,7 @@ def get_key(iot_id):
             sk_iot = item["sk"]
 
 if __name__ == "__main__":
-    client_name = input_client_name()
+    client_name = input("name: ")
     get_key(client_name)
     client = socket.socket()
     client.connect(ADDRESS)
