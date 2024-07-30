@@ -75,7 +75,7 @@ if __name__ == "__main__":
     m = random.randint(0, 9999)
     print(m)
     c= [[c]]
-    c.append(m)
+    c.append([m])
     send_data(client,"SEND_DATA",data = c)
     msg = json.loads(client.recv(1024).decode(encoding='utf8'))
     if msg == 0:
