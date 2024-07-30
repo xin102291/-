@@ -7,6 +7,7 @@ from time import sleep
 from asym import *
 from symm import *
 from key import *
+import os
 
 DHT_sensor = DHT.DHT11
 DHT_pin = 4
@@ -44,8 +45,28 @@ def send_data(client,cmd,**kv):
 def input_client_name():
     return input("name: ")
 
+def get_key(iot_id):
+    global pk_server,sk_iot,pk_iot
+    filename = "items.json"
+    target_dir = 'Send_message'
+    os.makedirs(target_dir, exist_ok=True)
+    file_path = os.path.join(target_dir, filename)
+    try:
+        with open(file_path, "r") as file:
+            items = json.load(file)
+    except FileNotFoundError:
+        print("找不到文件，無法更新數據")
+
+    for item in items:
+        if item["id"] == "SERVER1231":
+            pk_server = item["pk"]
+        if item["id"] == iot_id:
+            pk_iot = item["pk"]
+            sk_iot = item["sk"]
+
 if __name__ == "__main__":
     client_name = input_client_name()
+    get_key(client_name)
     client = socket.socket()
     client.connect(ADDRESS)
     print("產生簽章:")
