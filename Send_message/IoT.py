@@ -81,7 +81,7 @@ if __name__ == "__main__":
     if msg == 0:
         print("失敗")
     else:
-        p = E_server.decrypt(msg, pk_server)
+        p = E_server.decrypt(msg[0], pk_server)
         if(p == m):
             print("驗證成功")
     send_data(client,"CONNECT")
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         rh, tmp = DHT.read_retry( DHT_sensor, DHT_pin )
         if rh is not None and tmp is not None:
             # print('日期={2} 溫度={0:0.1f}度C 濕度={1:0.1f}%'.format(tmp, rh, today))
-            data = '{2},{0:0.1f},{1:0.1f}'.format(tmp, rh, today)
+            data = '{0:0.1f},{1:0.1f}'.format(tmp, rh)
             print(data)
             m = [0 for _ in range(n)]
             for i in range(0, len(data)):
