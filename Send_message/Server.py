@@ -6,6 +6,8 @@ from asym import *
 from key import *
 from symm import *
 import os
+import mysql.connector 
+from datetime import datetime
 q = 999999937
 n = 3
 scale = 10000
@@ -23,6 +25,14 @@ pk_iot = ""
 E_server = authentication(n, q, bound, scale, A_size, B_size, sk_size)
 pk_server = ""
 sk_server = ""
+
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="xin",
+    password="102291",
+    database="server"
+)
+mycursor = mydb.cursor()
 
 def get_key(iot_id):
     global pk_server,sk_server,pk_iot
@@ -141,6 +151,14 @@ def message_handle(client,info):
                         if(i != 0):
                             text_p += chr(i)
                     print(f"{client_name}:{text_p}")
+                    
+                    temperature, humidity = map(float, text_p.split(','))
+                    received_time = datetime.now()
+                    sql = "INSERT INTO sensor_readings (iot_id, temperature, humidity, received_time) VALUES (%s, %s, %s, %s)"
+                    val = (client_name, temperature, humidity, received_time)
+
+                    mycursor.execute(sql, val)
+                    mydb.commit()
                     # print(f"{client_name}:{jd['data']['data']}")
                 
                 
