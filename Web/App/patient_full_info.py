@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
 from App.SQL import *
+import json
 
 # 創建數據庫引擎
 engine = create_engine('mysql://pqc:123456@localhost/server', pool_size=5, max_overflow=0)
@@ -112,7 +113,29 @@ def get_medical_documents(patient_id):
             'upload_date': document.upload_date.strftime('%Y-%m-%d')
         } for document in documents] if documents else None
 
-# 獲取患者完整資訊
+def get_sensor_readings(patient_id):
+    with get_session() as session:
+        # 查询并按 received_time 列进行排序
+        measurements = session.query(SensorReading) \
+                              .filter_by(patient_id=patient_id) \
+                              .order_by(SensorReading.received_time) \
+                              .all()
+        
+        if measurements:
+            # 返回格式化的结果
+            return [
+                {
+                    'id': m.id,
+                    'patient_id': m.patient_id,
+                    'temperature': m.temperature,
+                    'humidity': m.humidity,
+                    'received_time': m.received_time.strftime('%Y-%m-%d %H:%M:%S')
+                } for m in measurements
+            ]
+        else:
+            return None
+
+        
 def get_patient_full_info(patient_id):
     patient_info = get_patient(patient_id)
     if patient_info:
@@ -122,6 +145,9 @@ def get_patient_full_info(patient_id):
         patient_data['tests_and_results'] = get_tests_and_results(patient_id)
         patient_data['appointments'] = get_appointments(patient_id)
         patient_data['medical_documents'] = get_medical_documents(patient_id)
+        patient_data['sensor_readings'] = get_sensor_readings(patient_id)
+        
         return patient_data
     else:
         return None
+    

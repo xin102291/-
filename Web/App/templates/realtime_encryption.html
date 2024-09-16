@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>實時加密過程</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        h1 { color: #333; }
+        #encryption-steps { list-style-type: none; padding: 0; }
+        #encryption-steps li { margin-bottom: 10px; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <h1>實時加密過程</h1>
+    <ul id="encryption-steps"></ul>
+
+    <script>
+        const socket = io();
+        const encryptionSteps = document.getElementById('encryption-steps');
+
+        socket.on('encryption_step', function(data) {
+            const li = document.createElement('li');
+            li.textContent = data.step;
+            encryptionSteps.appendChild(li);
+        });
+    </script>
+</body>
+</html>

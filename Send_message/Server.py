@@ -119,7 +119,7 @@ def message_handle(client,info):
                 get_key(client_name)
                 data = jd['data']['data']
                 print("接收訊息: ",data)
-                print(len(data))
+                # print(len(data))
                 if len(data) == 2: #以長度判斷是否為正常驗證訊息
                     print("驗證簽章")
                     c = data[0]
@@ -151,11 +151,12 @@ def message_handle(client,info):
                         if(i != 0):
                             text_p += chr(i)
                     print(f"{client_name}:{text_p}")
+                    print()
                     
                     temperature, humidity = map(float, text_p.split(','))
                     received_time = datetime.now()
-                    sql = "INSERT INTO sensor_readings (iot_id, temperature, humidity, received_time) VALUES (%s, %s, %s, %s)"
-                    val = (client_name, temperature, humidity, received_time)
+                    sql = "INSERT INTO sensor_readings (patient_id,iot_id, temperature, humidity, received_time) VALUES (%s, %s, %s, %s, %s)"
+                    val = ('Q224390730',client_name, temperature, humidity, received_time)
 
                     mycursor.execute(sql, val)
                     mydb.commit()

@@ -96,10 +96,12 @@ CREATE TABLE IF NOT EXISTS  medical_documents (
 
 CREATE TABLE IF NOT EXISTS sensor_readings (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id VARCHAR(50),
     iot_id VARCHAR(50),
     temperature FLOAT,
     humidity FLOAT,
-    received_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    received_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(id)
 );
 
 

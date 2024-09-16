@@ -1,5 +1,6 @@
 from flask import render_template
 from flask import Flask,render_template,request,flash,redirect,url_for, jsonify
+from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 import os
 import random
@@ -19,6 +20,9 @@ database_url = os.environ.get('DATABASE_URL', 'mysql+pymysql://pqc:123456@localh
 # 設置 SQLAlchemy 配置
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.urandom(24)
+socketio = SocketIO(app)
+
 db.init_app(app)
 
 logging.basicConfig(level=logging.DEBUG)
@@ -46,6 +50,15 @@ B_size = 32
 sk_size = 12
 
 E = authentication(n, q, bound, scale, A_size, B_size, sk_size)
+
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
 
 @app.before_request
 def before_request():
@@ -112,15 +125,28 @@ def request_loader(request):
 
 def Authentication(pk,sk):
     m = random.randrange(0,9999,1)
+
+    socketio.emit('encryption_step', {'step': f'訊息(m): {m}'})
     # 私鑰產生簽章
     c = E.encrypt(m, pk, sk)
+
+    socketio.emit('encryption_step', {'step': f'私鑰產生簽章(c): {c}'})
     # 公鑰驗證簽章
     p = E.decrypt(c, pk)
+
+    socketio.emit('encryption_step', {'step': f'公鑰驗證簽章(p): {p}'})
     # 驗證原本生成的訊息與簽章是否一致
+
+    socketio.emit('encryption_step', {'step': '驗證( m == p )'})
+
     if m == p:
         return 1
     else:
         return 0
+
+@app.route('/realtime_encryption')
+def realtime_encryption():
+    return render_template('realtime_encryption.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -144,16 +170,27 @@ def login():
         if not patient:
             return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
 
+        # 發送開始加密的消息
+        socketio.emit('encryption_step', {'step': '開始驗證'})
+
         (pk, sk) = asym_key(id, hashed_password, n, q, bound, A_size, B_size, sk_size)
         
+         # 發送加密步驟的消息
+        socketio.emit('encryption_step', {'step': f'生成公鑰 (pk): {pk}'})
+        socketio.emit('encryption_step', {'step': f'生成私鑰 (sk): {sk}'})
+        
+
         if Authentication(patient.pk, sk):
             # 登入成功
+
+            socketio.emit('encryption_step', {'step': '驗證成功'})
             user = User(user_id)
             user.id = user_id
             login_user(user)
             print("成功")
             return jsonify({"success": True, "message": "登入成功！"}), 200
         else:
+            socketio.emit('encryption_step', {'step': '驗證失敗'})
             return jsonify({"error": "帳號或密碼輸入錯誤"}), 400
 
     except Exception as e:
@@ -250,38 +287,6 @@ def datepage():
 
     return render_template("datepage.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
 
-@app.route("/dashboard", methods=['GET', 'POST'])
-@login_required
-def dashboard():
-    temp_min = request.args.get('temp_min')
-    temp_max = request.args.get('temp_max')
-    hum_min = request.args.get('hum_min')
-    hum_max = request.args.get('hum_max')
-    iot_data = get_iot_data()
-    if temp_min or temp_max or hum_min or hum_max:
-        filtered_data = []
-        for item in iot_data:
-            if temp_min and float(item['temperature']) < float(temp_min):
-                continue
-            if temp_max and float(item['temperature']) > float(temp_max):
-                continue
-            if hum_min and float(item['humidity']) < float(hum_min):
-                continue
-            if hum_max and float(item['humidity']) > float(hum_max):
-                continue
-            filtered_data.append(item)
-        iot_data = filtered_data
-
-    return render_template("dashboard.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
-
-def get_iot_data():
-    # 生成隨機500筆資料
-    iot_data = []
-    for _ in range(500):
-        temperature = round(random.uniform(20.0, 30.0), 2)
-        humidity = round(random.uniform(40.0, 60.0), 2)
-        iot_data.append({'temperature': temperature, 'humidity': humidity, 'date': '2024-06-01'})
-    return iot_data
 
 
 
@@ -356,3 +361,33 @@ def patient_medical_documents():
         documents = get_medical_documents(id)
     return render_template('patient_medical_documents.html', patient_name=patient,documents=documents)
 
+@app.route('/patient_dashboard')
+@login_required
+def patient_dashboard():
+    global id
+    patient_info = get_patient(id)
+    if patient_info:
+        # 獲取溫度和濕度數據
+        sensor_readings = get_sensor_readings(id)
+        
+        temperature_data = {
+            'dates': [],
+            'temperatures': []
+        }
+        humidity_data = {
+            'dates': [],
+            'humidity': []
+        }
+        
+        if sensor_readings:
+            for reading in sensor_readings:
+                temperature_data['dates'].append(reading['received_time'])
+                temperature_data['temperatures'].append(reading['temperature'])
+                humidity_data['dates'].append(reading['received_time'])
+                humidity_data['humidity'].append(reading['humidity'])
+        
+        return render_template('patient_dashboard.html', 
+                               temperature_data=temperature_data,
+                               humidity_data=humidity_data)
+    else:
+        return render_template('patient_dashboard.html', error="無法獲取環境數據")

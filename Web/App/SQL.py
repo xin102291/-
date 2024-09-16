@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -20,6 +21,7 @@ class Patient(db.Model):
     appointments = relationship('Appointment', back_populates='patient')
     health_reminders = relationship('HealthReminder', back_populates='patient')
     medical_documents = relationship('MedicalDocument', back_populates='patient')
+    sensor_readings = relationship("SensorReading", back_populates="patient")
 
 class Hospital(db.Model):
     __tablename__ = 'hospitals'
@@ -112,3 +114,17 @@ class MedicalDocument(db.Model):
     upload_date = db.Column(db.Date, nullable=False)
 
     patient = relationship('Patient', back_populates='medical_documents')
+
+class SensorReading(db.Model):
+    __tablename__ = 'sensor_readings'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patients.id'))
+    iot_id = db.Column(db.String(50))
+    temperature = db.Column(db.Float)
+    humidity = db.Column(db.Float)
+    received_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+    patient = db.relationship("Patient", back_populates="sensor_readings")
+
+Patient.sensor_readings = db.relationship("SensorReading", order_by=SensorReading.received_time, back_populates="patient")
