@@ -1,4 +1,4 @@
-from flask import render_template
+from flask import render_template,session
 from flask import Flask,render_template,request,flash,redirect,url_for, jsonify
 from flask_socketio import SocketIO, emit
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
@@ -36,10 +36,11 @@ login_manager.login_view = 'login'
 
 
 # 全局變量
-users = []
+# 移除全局變量 id 和 pwd
+# global id, pwd
+global is_first_request, users
 is_first_request = True
-id = ""
-pwd = ""
+users = []
 q = 999999937
 n = 3
 scale = 10000
@@ -187,6 +188,8 @@ def login():
             user = User(user_id)
             user.id = user_id
             login_user(user)
+            # 將用戶ID保存到session
+            session['user_id'] = user_id
             print("成功")
             return jsonify({"success": True, "message": "登入成功！"}), 200
         else:
@@ -270,7 +273,7 @@ def signup():
 @app.route('/home')
 @login_required
 def home():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     
     if patient_info:
@@ -289,7 +292,7 @@ def home():
 
 @app.route('/patient_personal_info')
 def patient_personal_info():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:
         patient = patient_info[0]
@@ -297,7 +300,7 @@ def patient_personal_info():
     
 @app.route('/patient_test_results')
 def patient_test_results():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:    
         patient = patient_info[0]
@@ -307,7 +310,7 @@ def patient_test_results():
 
 @app.route('/patient_medical_records')
 def patient_medical_records():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:
         patient = patient_info[0]['name']
@@ -316,7 +319,7 @@ def patient_medical_records():
     
 @app.route('/patient_medications')
 def patient_medications():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:
         patient = patient_info[0]['name']
@@ -326,7 +329,7 @@ def patient_medications():
 @app.route('/patient_medical_documents')
 @login_required
 def patient_medical_documents():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:
         patient = patient_info[0]['name']
@@ -336,7 +339,7 @@ def patient_medical_documents():
 @app.route('/patient_dashboard')
 @login_required
 def patient_dashboard():
-    global id
+    id = session.get('user_id')  # 從 session 中獲取當前用戶的 ID
     patient_info = get_patient(id)
     if patient_info:
         # 獲取溫度和濕度數據
