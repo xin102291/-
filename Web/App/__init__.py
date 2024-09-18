@@ -1,7 +1,7 @@
 from flask import Flask
 import sys
 import os
-from .route import *
+from App.route import *
 
 def create_app(app):
     # app = Flask(__name__,static_folder="static", static_url_path="/")

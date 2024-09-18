@@ -4,8 +4,8 @@ https://zh.wikipedia.org/zh-tw/%E5%9B%BD%E9%99%85%E6%A0%87%E5%87%86%E4%B9%A6%E5%
 '''
 
 
-from key import *
-from utils import *
+from IoT.key import *
+from IoT.utils import *
 import numpy as np
 import random
 import string
