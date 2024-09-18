@@ -262,34 +262,6 @@ def signup():
 
     return render_template('signup.html', error="無效的請求方法")
 
-@app.route("/datepage", methods=['GET', 'POST'])
-@login_required
-def datepage():
-    temp_min = request.args.get('temp_min')
-    temp_max = request.args.get('temp_max')
-    hum_min = request.args.get('hum_min')
-    hum_max = request.args.get('hum_max')
-    iot_data = get_iot_data()
-
-    if temp_min or temp_max or hum_min or hum_max:
-        filtered_data = []
-        for item in iot_data:
-            if temp_min and float(item['temperature']) < float(temp_min):
-                continue
-            if temp_max and float(item['temperature']) > float(temp_max):
-                continue
-            if hum_min and float(item['humidity']) < float(hum_min):
-                continue
-            if hum_max and float(item['humidity']) > float(hum_max):
-                continue
-            filtered_data.append(item)
-        iot_data = filtered_data
-
-    return render_template("datepage.html", iot_data=iot_data, temp_min=temp_min, temp_max=temp_max, hum_min=hum_min, hum_max=hum_max)
-
-
-
-
 
 
 
@@ -378,7 +350,7 @@ def patient_dashboard():
             'dates': [],
             'humidity': []
         }
-        
+        patient = patient_info[0]['name']
         if sensor_readings:
             for reading in sensor_readings:
                 temperature_data['dates'].append(reading['received_time'])
@@ -386,7 +358,8 @@ def patient_dashboard():
                 humidity_data['dates'].append(reading['received_time'])
                 humidity_data['humidity'].append(reading['humidity'])
         
-        return render_template('patient_dashboard.html', 
+        return render_template('patient_dashboard.html',
+                               patient_name=patient, 
                                temperature_data=temperature_data,
                                humidity_data=humidity_data)
     else:

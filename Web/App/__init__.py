@@ -11,7 +11,6 @@ def create_app(app):
     app.add_url_rule('/patient_medical_records', 'patient_medical_records', patient_medical_records)
     app.add_url_rule('/patient_medications', 'patient_medications', patient_medications)
     app.add_url_rule('/patient_medical_documents', 'patient_medical_documents', patient_medical_documents)
-    app.add_url_rule('/datepage', 'datepage', datepage)
     app.add_url_rule('/dashboard', 'dashboard', patient_dashboard)
     app.add_url_rule('/logout', 'logout', logout)
     app.add_url_rule('/signup', 'signup', signup)
