@@ -5,11 +5,11 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 import os
 import random
 import pandas as pd
-from App.patient_full_info import *
-from App.key import *
-from App.id_card import *
-from App.asym import *
-from App.SQL import *
+from .patient_full_info import *
+from .key import *
+from .id_card import *
+from .asym import *
+from .SQL import *
 import logging
 
 global app
