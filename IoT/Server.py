@@ -39,7 +39,9 @@ def get_key(iot_id):
     filename = "items.json"
     target_dir = 'Send_message'
     os.makedirs(target_dir, exist_ok=True)
-    file_path = os.path.join(target_dir, filename)
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__)) 
+    file_path = os.path.join(base_dir, "items.json")  # 確保文件使用絕對路徑
     try:
         with open(file_path, "r") as file:
             items = json.load(file)
@@ -156,7 +158,7 @@ def message_handle(client,info):
                     temperature, humidity = map(float, text_p.split(','))
                     received_time = datetime.now()
                     sql = "INSERT INTO sensor_readings (patient_id,iot_id, temperature, humidity, received_time) VALUES (%s, %s, %s, %s, %s)"
-                    val = ('Q224390730',client_name, temperature, humidity, received_time)
+                    val = ('A207761787',client_name, temperature, humidity, received_time)
 
                     mycursor.execute(sql, val)
                     mydb.commit()
