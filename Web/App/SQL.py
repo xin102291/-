@@ -121,8 +121,8 @@ class SensorReading(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patients.id'))
     iot_id = db.Column(db.String(50))
-    temperature = db.Column(db.Float)
-    humidity = db.Column(db.Float)
+    blood_oxygen = db.Column(db.Float)
+    heartbeat = db.Column(db.Float)
     received_time = db.Column(db.DateTime, default=datetime.utcnow)
 
     patient = db.relationship("Patient", back_populates="sensor_readings")

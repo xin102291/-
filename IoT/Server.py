@@ -94,7 +94,12 @@ def message_handle(client,info):
                 #session_key
                 print("session_key")
                 try:
+                    q = 999999937
+                    n = 3
+                    scale = 10000
+                    bound = 5
                     E = LWEasym(n, q, bound, scale, A_size, B_size, sk_size)
+                    
                     # Generate five random numbers, store them in m array
                     m = [random.randint(0, 9999) for _ in range(5)]
                     # print("Generate a random message:", m)
@@ -108,8 +113,9 @@ def message_handle(client,info):
                         count += 1
                     print(session_key)
                     # Encrypt m array and store in c array
+                    c = []
                     c = [E.encrypt(num, pk_iot) for num in m]
-                    # print("Encrypted messages:", c)
+                    #print("Encrypted messages:", c)
                     
                     c = json.dumps(c)
                     client.sendall(c.encode(encoding="utf8"))
@@ -155,10 +161,10 @@ def message_handle(client,info):
                     print(f"{client_name}:{text_p}")
                     print()
                     
-                    temperature, humidity = map(float, text_p.split(','))
+                    heartbeat, blood_oxygen = map(float, text_p.split(','))
                     received_time = datetime.now()
-                    sql = "INSERT INTO sensor_readings (patient_id,iot_id, temperature, humidity, received_time) VALUES (%s, %s, %s, %s, %s)"
-                    val = ('A207761787',client_name, temperature, humidity, received_time)
+                    sql = "INSERT INTO sensor_readings (patient_id,iot_id, heartbeat, blood_oxygen, received_time) VALUES (%s, %s, %s, %s, %s)"
+                    val = ('A207761787',client_name, heartbeat,blood_oxygen, received_time)
 
                     mycursor.execute(sql, val)
                     mydb.commit()

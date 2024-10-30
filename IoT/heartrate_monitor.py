@@ -17,7 +17,7 @@ class HeartRateMonitor(object):
     A class that encapsulates the max30102 device into a thread
     """
 
-    LOOP_TIME = 0.01
+    LOOP_TIME = 1
 
     def __init__(self, print_raw=False, print_result=False):
         self.bpm = 0
@@ -78,7 +78,7 @@ class HeartRateMonitor(object):
                                 print("Finger not detected")
                         if self.print_result:
                             print("BPM: {0}, SpO2: {1}".format(self.bpm, spo2))
-                            if int(spo2) != -999 and int(self.bpm) != 0:
+                            if 40 <= int(spo2) and 40 <= int(self.bpm):
                                 
                                 q = 100003
                                 n = 10

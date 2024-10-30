@@ -127,8 +127,8 @@ def get_sensor_readings(patient_id):
                 {
                     'id': m.id,
                     'patient_id': m.patient_id,
-                    'temperature': m.temperature,
-                    'humidity': m.humidity,
+                    'heartbeat': m.heartbeat,
+                    'blood_oxygen': m.blood_oxygen,
                     'received_time': m.received_time.strftime('%Y-%m-%d %H:%M:%S')
                 } for m in measurements
             ]

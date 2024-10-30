@@ -116,34 +116,34 @@
     <main>
         <div class="dashboard-grid">
             <div class="dashboard-item">
-                <h2>溫度趨勢</h2>
+                <h2>血氧趨勢</h2>
                 <div class="chart-container">
-                    <canvas id="temperatureChart"></canvas>
+                    <canvas id="blood_oxygenChart"></canvas>
                 </div>
             </div>
             <div class="dashboard-item">
-                <h2>濕度趨勢</h2>
+                <h2>心跳趨勢</h2>
                 <div class="chart-container">
-                    <canvas id="humidityChart"></canvas>
+                    <canvas id="heartbeatChart"></canvas>
                 </div>
             </div>
         </div>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            renderTemperatureChart({{ temperature_data|tojson }});
-            renderHumidityChart({{ humidity_data|tojson }});
+            renderblood_oxygenChart({{ blood_oxygen_data|tojson }});
+            renderheartbeatChart({{ heartbeat_data|tojson }});
         });
 
-        function renderTemperatureChart(data) {
-            const ctx = document.getElementById('temperatureChart').getContext('2d');
+        function renderblood_oxygenChart(data) {
+            const ctx = document.getElementById('blood_oxygenChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.dates,
                     datasets: [{
-                        label: '溫度 (°C)',
-                        data: data.temperatures,
+                        label: '血氧',
+                        data: data.blood_oxygens,
                         borderColor: 'rgb(255, 99, 132)',
                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         tension: 0.1
@@ -169,15 +169,15 @@
             });
         }
 
-        function renderHumidityChart(data) {
-            const ctx = document.getElementById('humidityChart').getContext('2d');
+        function renderheartbeatChart(data) {
+            const ctx = document.getElementById('heartbeatChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.dates,
                     datasets: [{
-                        label: '濕度 (%)',
-                        data: data.humidity,
+                        label: '心跳',
+                        data: data.heartbeat,
                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
                         borderColor: 'rgb(54, 162, 235)',
                         tension: 0.1

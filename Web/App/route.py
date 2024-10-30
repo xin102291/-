@@ -345,25 +345,25 @@ def patient_dashboard():
         # 獲取溫度和濕度數據
         sensor_readings = get_sensor_readings(id)
         
-        temperature_data = {
+        blood_oxygen_data = {
             'dates': [],
-            'temperatures': []
+            'blood_oxygens': []
         }
-        humidity_data = {
+        heartbeat_data = {
             'dates': [],
-            'humidity': []
+            'heartbeat': []
         }
         patient = patient_info[0]['name']
         if sensor_readings:
             for reading in sensor_readings:
-                temperature_data['dates'].append(reading['received_time'])
-                temperature_data['temperatures'].append(reading['temperature'])
-                humidity_data['dates'].append(reading['received_time'])
-                humidity_data['humidity'].append(reading['humidity'])
+                blood_oxygen_data['dates'].append(reading['received_time'])
+                blood_oxygen_data['blood_oxygens'].append(reading['blood_oxygen'])
+                heartbeat_data['dates'].append(reading['received_time'])
+                heartbeat_data['heartbeat'].append(reading['heartbeat'])
         
         return render_template('patient_dashboard.html',
                                patient_name=patient, 
-                               temperature_data=temperature_data,
-                               humidity_data=humidity_data)
+                               blood_oxygen_data=blood_oxygen_data,
+                               heartbeat_data=heartbeat_data)
     else:
         return render_template('patient_dashboard.html', error="無法獲取環境數據")
